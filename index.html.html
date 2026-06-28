@@ -1,0 +1,1385 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Gold & Rose Executive Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;900&family=Playfair+Display:ital,wght@1,600;1,700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #f9fafb; -webkit-tap-highlight-color: transparent; overscroll-behavior: none; }
+        .no-spinner::-webkit-outer-spin-button, .no-spinner::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+        .no-spinner { -moz-appearance: textfield; }
+        .animate-fadeIn { animation: fadeIn 0.2s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+        
+        @media print {
+            body * { visibility: hidden; }
+            #print-area, #print-area * { visibility: visible; }
+            #print-area { position: absolute; left: 0; top: 0; width: 100%; padding: 20px; }
+            #print-button { display: none; }
+        }
+
+        /* Sketchpad Transform UI */
+        #transform-box { border: 2px dashed #3b82f6; position: absolute; pointer-events: auto; display: none; touch-action: none; z-index: 50; }
+        .transform-handle { 
+            position: absolute; width: 28px; height: 28px; background: white; 
+            border: 2px solid #3b82f6; border-radius: 50%; box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+            display: flex; align-items: center; justify-content: center; color: #3b82f6;
+        }
+        #handle-scale { bottom: -14px; right: -14px; cursor: nwse-resize; }
+        #handle-rotate { top: -14px; right: -14px; cursor: grab; background: #eab308; border-color: #ca8a04; color: white; }
+    </style>
+</head>
+<body class="antialiased">
+    <div id="app" class="min-h-screen p-3 md:p-8"></div>
+
+    <script>
+        // --- SAFE DATA PARSER ---
+        function safeJSONParse(key, defaultVal) {
+            try {
+                const val = localStorage.getItem(key);
+                return val ? JSON.parse(val) : defaultVal;
+            } catch (e) {
+                console.warn(`Local storage corrupted for ${key}. Reverting to safe default.`, e);
+                return defaultVal;
+            }
+        }
+
+        // --- MASTER CONFIGURATIONS ---
+        const GOLD_API_KEY = 'INSERT_YOUR_NEW_KEY_HERE'; 
+        const TROY_ONCE_GRAMS = 31.1034768;
+
+        const DENSITIES = {
+            gold: { 10: 11.4, 14: 13.1, 18: 15.5, 19: 16.1, 22: 17.7, 24: 19.3 },
+            platinum: 20.1, silver: 10.4
+        };
+
+        const FANCY_SHAPES = {
+            'Princess': [ { label: '1.5 x 1.5mm', carat: 0.015 }, { label: '2.0 x 2.0mm', carat: 0.050 }, { label: '2.5 x 2.5mm', carat: 0.100 }, { label: '3.0 x 3.0mm', carat: 0.160 }, { label: '3.5 x 3.5mm', carat: 0.240 }, { label: '4.0 x 4.0mm', carat: 0.330 }, { label: '4.5 x 4.5mm', carat: 0.500 }, { label: '5.0 x 5.0mm', carat: 0.750 } ],
+            'Oval': [ { label: '3.0 x 2.0mm', carat: 0.070 }, { label: '3.5 x 2.5mm', carat: 0.110 }, { label: '4.0 x 3.0mm', carat: 0.150 }, { label: '4.5 x 3.5mm', carat: 0.220 }, { label: '5.0 x 3.0mm', carat: 0.250 }, { label: '5.0 x 4.0mm', carat: 0.350 } ],
+            'Pear': [ { label: '3.0 x 2.0mm', carat: 0.050 }, { label: '3.5 x 2.5mm', carat: 0.080 }, { label: '4.0 x 3.0mm', carat: 0.150 }, { label: '4.5 x 3.5mm', carat: 0.210 }, { label: '5.0 x 3.0mm', carat: 0.250 }, { label: '5.0 x 4.0mm', carat: 0.330 } ],
+            'Emerald': [ { label: '3.0 x 2.0mm', carat: 0.080 }, { label: '3.5 x 2.5mm', carat: 0.120 }, { label: '4.0 x 3.0mm', carat: 0.200 }, { label: '4.5 x 3.5mm', carat: 0.300 }, { label: '5.0 x 3.5mm', carat: 0.380 }, { label: '5.0 x 4.0mm', carat: 0.450 } ],
+            'Marquise': [ { label: '3.0 x 1.5mm', carat: 0.030 }, { label: '3.5 x 2.0mm', carat: 0.050 }, { label: '4.0 x 2.0mm', carat: 0.070 }, { label: '4.5 x 2.5mm', carat: 0.120 }, { label: '5.0 x 2.5mm', carat: 0.150 }, { label: '5.0 x 3.0mm', carat: 0.220 } ],
+            'Cushion': [ { label: '1.5 x 1.5mm', carat: 0.020 }, { label: '2.0 x 2.0mm', carat: 0.060 }, { label: '2.5 x 2.5mm', carat: 0.110 }, { label: '3.0 x 3.0mm', carat: 0.180 }, { label: '3.5 x 3.5mm', carat: 0.260 }, { label: '4.0 x 4.0mm', carat: 0.360 }, { label: '4.5 x 4.5mm', carat: 0.520 }, { label: '5.0 x 5.0mm', carat: 0.780 } ],
+            'Radiant': [ { label: '3.0 x 2.0mm', carat: 0.080 }, { label: '3.5 x 2.5mm', carat: 0.130 }, { label: '4.0 x 3.0mm', carat: 0.210 }, { label: '4.5 x 3.5mm', carat: 0.310 }, { label: '5.0 x 3.5mm', carat: 0.400 }, { label: '5.0 x 4.0mm', carat: 0.480 } ]
+        };
+
+        const CENTER_SHAPES = ['Round', 'Princess', 'Oval', 'Pear', 'Emerald', 'Marquise', 'Cushion', 'Radiant'];
+
+        const PURITY_OPTIONS = {
+            gold: Array.from({length: 23}, (_, i) => i + 2), 
+            silver: [0.999, 0.925, 0.800, 0.700, 0.600, 0.500],
+            platinum: [0.999, 0.950, 0.900, 0.850]
+        };
+
+        const ICONS = {
+            pen: `<svg viewBox="0 0 24 24" width="22" height="22" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19l7-7 3 3-7 7-3-3z"></path><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"></path><path d="M2 2l7.586 7.586"></path><circle cx="11" cy="11" r="2"></circle></svg>`,
+            highlighter: `<svg viewBox="0 0 24 24" width="22" height="22" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19l7-7 3 3-7 7-3-3z"></path><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"></path><line x1="4" y1="22" x2="20" y2="22"></line></svg>`,
+            eraser: `<svg viewBox="0 0 24 24" width="22" height="22" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M20 20H7L3 16c-.5-.5-.5-1.5 0-2l10-10c.5-.5 1.5-.5 2 0l5 5c.5.5.5 1.5 0 2l-9 9"></path><path d="M15 11l5-5"></path></svg>`,
+            transform: `<svg viewBox="0 0 24 24" width="22" height="22" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><path d="M21 15v2a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-2"></path><path d="M21 9V7a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v2"></path></svg>`,
+            camera: `<svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>`,
+            scale: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 3 21 3 21 9"></polyline><polyline points="9 21 3 21 3 15"></polyline><line x1="21" y1="3" x2="14" y2="10"></line><line x1="3" y1="21" x2="10" y2="14"></line></svg>`,
+            rotate: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.59-9.28l5.67-5.67"/></svg>`
+        };
+
+        const state = {
+            activeTab: 'quote',
+            spotPrices: { gold: 3500.00, silver: 45.00, platinum: 1200.00 },
+            customerName: '', phoneNumber: '', address: '', driversLicense: '',
+            stoneRemovalQty: '', 
+            scrapItems: [{ weight: '', material: 'gold', purity: 14, rate: 85 }],
+            scrapImage: null,
+            scrapTransactions: safeJSONParse('gr_scrap_ledger', []),
+            ringQuoteTransactions: safeJSONParse('gr_quote_ledger', []),
+            lastUpdated: 'Manual Input',
+            syncStatus: 'Idle',
+            isEditingNotes: false,
+            scrapNotes: "• 24k gold bullion (coins/bars) is typically purchased at 95% (5% margin).\n• Treat all calculations as confidential store reference data.",
+            quickCalcPurity: 'gold_14', quickCalcGrams: '',
+            
+            // Sketch Engine State
+            isSketching: false,
+            quoteImage: null,
+            
+            quote: {
+                type: 'custom', 
+                cName: '', cPhone: '', notes: '',
+                taxGST: false, taxPST: false,
+                meleePricePerCt: 2400.00, fancyPricePerCt: 700.00,
+                melee: [
+                    { size: '1.0', carat: 0.005, qty: '' }, { size: '1.2', carat: 0.008, qty: '' }, { size: '1.3', carat: 0.010, qty: '' }, { size: '1.5', carat: 0.015, qty: '' },
+                    { size: '1.6', carat: 0.017, qty: '' }, { size: '1.7', carat: 0.020, qty: '' }, { size: '1.8', carat: 0.025, qty: '' }, { size: '2.0', carat: 0.030, qty: '' },
+                    { size: '2.2', carat: 0.040, qty: '' }, { size: '2.3', carat: 0.045, qty: '' }, { size: '2.4', carat: 0.050, qty: '' }, { size: '2.5', carat: 0.060, qty: '' },
+                    { size: '2.6', carat: 0.065, qty: '' }, { size: '2.7', carat: 0.070, qty: '' }, { size: '2.8', carat: 0.080, qty: '' }, { size: '3.0', carat: 0.100, qty: '' },
+                    { size: '3.2', carat: 0.120, qty: '' }, { size: '3.5', carat: 0.170, qty: '' }, { size: '4.0', carat: 0.250, qty: '' }
+                ],
+                fancyShape: 'Princess', fancySizeIdx: 0, fancyQty: '',
+                material: 'gold', goldGrams: '', goldKarat: 14,
+                mbSize: '', mbWidth: '', mbThickness: '', 
+                cRingSize: '', cBandWidth: '', cBandThickness: '', // Custom record specs
+                goldPricesPerGram: { 10: 200, 14: 233, 18: 280, 19: 290, 22: 320 },
+                platinumPricePerGram: 380, silverPricePerGram: 100,
+                centerStone: { carats: '', shape: 'Round' },
+                customAddon: '',
+                rawCostRates: { melee: 300, fancy: 380, center: 400 }
+            }
+        };
+
+        // --- SKETCHPAD ENGINE WITH PRO TRANSFORM LOGIC ---
+        let sketchCtx;
+        let isDrawing = false;
+        let bgImageObj = null;
+        let imgState = { x: 0, y: 0, scale: 1, rot: 0, width: 0, height: 0 };
+        let sketchState = { tool: 'pen', color: '#1e3a8a', thickness: 3.0 };
+        
+        let transformMode = null; 
+        let transformStartX = 0, transformStartY = 0;
+        let transformStartDist = 1;
+        let transformStartAngle = 0;
+        let transformCenterX = 0, transformCenterY = 0;
+        let initialImgState = {};
+
+        function openSketcher() {
+            state.isSketching = true;
+            render(); 
+            
+            setTimeout(() => {
+                const canvas = document.getElementById('sketch-canvas');
+                const container = document.getElementById('sketch-container');
+                if(!canvas || !container) return;
+                
+                canvas.width = container.clientWidth; canvas.height = container.clientHeight;
+                sketchCtx = canvas.getContext('2d', { willReadFrequently: true });
+                sketchCtx.clearRect(0, 0, canvas.width, canvas.height); 
+                
+                if (state.quoteImage && !bgImageObj) {
+                    const img = new Image();
+                    img.onload = () => {
+                        bgImageObj = img;
+                        imgState.width = img.width; imgState.height = img.height;
+                        imgState.scale = Math.min(1, canvas.width / img.width, canvas.height / img.height) * 0.8;
+                        imgState.x = (canvas.width - (img.width * imgState.scale)) / 2;
+                        imgState.y = (canvas.height - (img.height * imgState.scale)) / 2;
+                        imgState.rot = 0;
+                        updateTransformBox();
+                    };
+                    img.src = state.quoteImage;
+                } else if (bgImageObj) {
+                    updateTransformBox();
+                }
+                
+                setSketchTool('pen');
+                setSketchColor('#1e3a8a', 'blue');
+                setSketchThickness(3.0, 2);
+
+                // Drawing Events
+                canvas.addEventListener('pointerdown', startDrawing);
+                canvas.addEventListener('pointermove', draw);
+                canvas.addEventListener('pointerup', stopDrawing);
+                canvas.addEventListener('pointerout', stopDrawing);
+                
+                // Transform Events
+                const tBox = document.getElementById('transform-box');
+                if(tBox) {
+                    tBox.addEventListener('pointerdown', handleTransformStart);
+                    window.addEventListener('pointermove', handleTransformMove);
+                    window.addEventListener('pointerup', handleTransformEnd);
+                }
+            }, 50);
+        }
+
+        function handleSketchBgUpload(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                const img = new Image();
+                img.onload = function() {
+                    bgImageObj = img;
+                    imgState.width = img.width; imgState.height = img.height;
+                    const canvas = document.getElementById('sketch-canvas');
+                    imgState.scale = Math.min(1, canvas.width / img.width, canvas.height / img.height) * 0.8;
+                    imgState.x = (canvas.width - (img.width * imgState.scale)) / 2;
+                    imgState.y = (canvas.height - (img.height * imgState.scale)) / 2;
+                    imgState.rot = 0;
+                    setSketchTool('transform'); 
+                    updateTransformBox();
+                };
+                img.src = event.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function updateTransformBox() {
+            const tBox = document.getElementById('transform-box');
+            const imgEl = document.getElementById('sketch-bg');
+            if (!tBox || !imgEl || !bgImageObj) return;
+
+            const w = imgState.width * imgState.scale;
+            const h = imgState.height * imgState.scale;
+
+            // Update Image
+            imgEl.src = bgImageObj.src;
+            imgEl.style.display = 'block';
+            imgEl.style.width = imgState.width + 'px';
+            imgEl.style.height = imgState.height + 'px';
+            imgEl.style.transform = `translate(${imgState.x}px, ${imgState.y}px) scale(${imgState.scale}) rotate(${imgState.rot}deg)`;
+            imgEl.style.transformOrigin = "top left";
+
+            // Update Box
+            tBox.style.width = w + 'px';
+            tBox.style.height = h + 'px';
+            const cx = imgState.x + (w/2);
+            const cy = imgState.y + (h/2);
+            tBox.style.transform = `translate(${cx - w/2}px, ${cy - h/2}px) rotate(${imgState.rot}deg)`;
+        }
+
+        function handleTransformStart(e) {
+            if (sketchState.tool !== 'transform') return;
+            e.preventDefault();
+            transformStartX = e.clientX; transformStartY = e.clientY;
+            initialImgState = { ...imgState };
+
+            const tBox = document.getElementById('transform-box');
+            const rect = tBox.getBoundingClientRect();
+            transformCenterX = rect.left + rect.width / 2;
+            transformCenterY = rect.top + rect.height / 2;
+
+            if (e.target.closest('#handle-scale')) {
+                transformMode = 'scale';
+                const dx = e.clientX - transformCenterX; const dy = e.clientY - transformCenterY;
+                transformStartDist = Math.sqrt(dx*dx + dy*dy) || 1;
+            } else if (e.target.closest('#handle-rotate')) {
+                transformMode = 'rotate';
+                transformStartAngle = Math.atan2(e.clientY - transformCenterY, e.clientX - transformCenterX);
+            } else {
+                transformMode = 'drag';
+            }
+        }
+
+        function handleTransformMove(e) {
+            if (!transformMode) return;
+            e.preventDefault();
+
+            if (transformMode === 'drag') {
+                const dx = e.clientX - transformStartX; const dy = e.clientY - transformStartY;
+                imgState.x = initialImgState.x + dx;
+                imgState.y = initialImgState.y + dy;
+            } else if (transformMode === 'scale') {
+                const dx = e.clientX - transformCenterX; const dy = e.clientY - transformCenterY;
+                const currentDist = Math.sqrt(dx*dx + dy*dy);
+                // Math-based smooth scale ratio
+                imgState.scale = Math.max(0.1, initialImgState.scale * (currentDist / transformStartDist));
+            } else if (transformMode === 'rotate') {
+                const currentAngle = Math.atan2(e.clientY - transformCenterY, e.clientX - transformCenterX);
+                imgState.rot = initialImgState.rot + ((currentAngle - transformStartAngle) * (180 / Math.PI));
+            }
+            updateTransformBox();
+        }
+
+        function handleTransformEnd() { transformMode = null; }
+
+        function setSketchTool(tool) {
+            sketchState.tool = tool;
+            ['pen', 'highlighter', 'eraser', 'transform'].forEach(t => {
+                const el = document.getElementById('tool-' + t);
+                if (el) { el.classList.remove('border-blue-500', 'bg-blue-50', 'text-blue-600'); el.classList.add('border-transparent', 'text-gray-600'); }
+            });
+            const selected = document.getElementById('tool-' + tool);
+            if (selected) { selected.classList.remove('border-transparent', 'text-gray-600'); selected.classList.add('border-blue-500', 'bg-blue-50', 'text-blue-600'); }
+            
+            const canvas = document.getElementById('sketch-canvas');
+            const tBox = document.getElementById('transform-box');
+            if(canvas && tBox) {
+                if(tool === 'transform') {
+                    canvas.style.pointerEvents = 'none';
+                    if(bgImageObj) tBox.style.display = 'block';
+                } else {
+                    canvas.style.pointerEvents = 'auto';
+                    tBox.style.display = 'none';
+                }
+            }
+            
+            if(sketchCtx) {
+                sketchCtx.lineCap = 'round'; sketchCtx.lineJoin = 'round';
+                if (tool === 'eraser') {
+                    sketchCtx.globalCompositeOperation = 'destination-out';
+                    sketchCtx.lineWidth = sketchState.thickness * 6; 
+                    sketchCtx.globalAlpha = 1.0;
+                } else {
+                    sketchCtx.globalCompositeOperation = 'source-over';
+                    sketchCtx.strokeStyle = sketchState.color;
+                    sketchCtx.lineWidth = tool === 'highlighter' ? sketchState.thickness * 4 : sketchState.thickness;
+                    sketchCtx.globalAlpha = tool === 'highlighter' ? 0.3 : 1.0;
+                }
+            }
+        }
+
+        function setSketchColor(color, id) {
+            sketchState.color = color;
+            if (sketchState.tool === 'eraser' || sketchState.tool === 'transform') setSketchTool('pen'); 
+            ['black', 'blue', 'red', 'green', 'yellow'].forEach(c => {
+                const el = document.getElementById('color-' + c);
+                if(el) { el.classList.remove('border-gray-400', 'scale-110'); el.classList.add('border-transparent', 'scale-100'); }
+            });
+            const selected = document.getElementById('color-' + id);
+            if(selected) { selected.classList.remove('border-transparent', 'scale-100'); selected.classList.add('border-gray-400', 'scale-110'); }
+            setSketchTool('pen');
+        }
+
+        function setSketchThickness(thickness, num) {
+            sketchState.thickness = thickness;
+            [1, 2, 3].forEach(n => {
+                const el = document.getElementById('thick-' + n);
+                if(el) { el.classList.remove('bg-blue-600', 'shadow-md'); el.classList.add('bg-gray-400'); }
+            });
+            const selected = document.getElementById('thick-' + num);
+            if(selected) { selected.classList.remove('bg-gray-400'); selected.classList.add('bg-blue-600', 'shadow-md'); }
+            setSketchTool(sketchState.tool);
+        }
+
+        function startDrawing(e) { isDrawing = true; draw(e); }
+        function draw(e) {
+            e.preventDefault(); 
+            if (!isDrawing) return;
+            const canvas = document.getElementById('sketch-canvas');
+            const rect = canvas.getBoundingClientRect();
+            const x = (e.clientX - rect.left) * (canvas.width / rect.width);
+            const y = (e.clientY - rect.top) * (canvas.height / rect.height);
+            sketchCtx.lineTo(x, y); sketchCtx.stroke(); sketchCtx.beginPath(); sketchCtx.moveTo(x, y);
+        }
+        function stopDrawing() { isDrawing = false; if(sketchCtx) sketchCtx.beginPath(); }
+
+        function clearSketch() {
+            const canvas = document.getElementById('sketch-canvas');
+            sketchCtx.clearRect(0, 0, canvas.width, canvas.height);
+            bgImageObj = null; state.quoteImage = null;
+            document.getElementById('sketch-bg').style.display = 'none';
+            document.getElementById('transform-box').style.display = 'none';
+            setSketchTool('pen');
+        }
+
+        function saveSketch() {
+            const canvas = document.getElementById('sketch-canvas');
+            const exportCanvas = document.createElement('canvas');
+            exportCanvas.width = canvas.width; exportCanvas.height = canvas.height;
+            const ctx = exportCanvas.getContext('2d');
+            
+            ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, exportCanvas.width, exportCanvas.height);
+            
+            if (bgImageObj) {
+                ctx.save();
+                const cx = imgState.x + (imgState.width * imgState.scale) / 2;
+                const cy = imgState.y + (imgState.height * imgState.scale) / 2;
+                ctx.translate(cx, cy);
+                ctx.rotate(imgState.rot * Math.PI / 180);
+                ctx.translate(-cx, -cy);
+                ctx.drawImage(bgImageObj, imgState.x, imgState.y, imgState.width * imgState.scale, imgState.height * imgState.scale);
+                ctx.restore();
+            }
+            
+            ctx.drawImage(canvas, 0, 0);
+            state.quoteImage = exportCanvas.toDataURL('image/jpeg', 0.8);
+            state.isSketching = false;
+            render();
+        }
+
+        function closeSketcher() { state.isSketching = false; render(); }
+
+        // --- STANDARD IMAGE UPLOAD & COMPRESSION (For Scrap ID) ---
+        function handleBasicImageUpload(event, targetStateKey) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const img = new Image();
+                img.onload = function() {
+                    const canvas = document.createElement('canvas');
+                    const MAX_WIDTH = 800;
+                    let width = img.width; let height = img.height;
+                    if (width > MAX_WIDTH) { height = height * (MAX_WIDTH / width); width = MAX_WIDTH; }
+                    canvas.width = width; canvas.height = height;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, width, height);
+                    if (targetStateKey === 'scrap') state.scrapImage = canvas.toDataURL('image/jpeg', 0.6);
+                    render();
+                };
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        // --- DATA EXPORT & CLEARANCE MODULE ---
+        function exportCSV(type) {
+            let csv = "";
+            if (type === 'scrap') {
+                csv = "Date,Client,Phone,Summary,Total\n";
+                state.scrapTransactions.forEach(t => {
+                    csv += `"${t.date}","${t.name}","${t.phone || ''}","${t.summary.replace(/"/g, '""')}","${t.total}"\n`;
+                });
+            } else {
+                csv = "Date,Client,Phone,Type,Metal Base,Centerstone,Final Price\n";
+                state.ringQuoteTransactions.forEach(q => {
+                    const baseStr = q.fullData.type === 'mens_band' 
+                        ? `Band Sz ${q.fullData.mbSize} | ${q.fullData.goldGrams}g ${q.fullData.material}` 
+                        : `${q.fullData.goldGrams}g ${q.fullData.material}`;
+                    const centerStr = q.fullData.type === 'mens_band' ? 'N/A' : `${q.fullData.centerStone?.carats || 0}ct ${q.fullData.centerStone?.shape || 'Round'}`;
+                    csv += `"${q.date}","${q.name}","${q.phone || ''}","${q.fullData.type}","${baseStr}","${centerStr}","${q.total}"\n`;
+                });
+            }
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${type}_Ledger_Export_${new Date().toISOString().slice(0,10)}.csv`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        function clearHistory() {
+            const range = document.getElementById('clear-history-range').value;
+            const startDateEl = document.getElementById('clear-start-date').value;
+            const endDateEl = document.getElementById('clear-end-date').value;
+
+            if (!confirm("WARNING: Are you sure you want to delete ledger history? Ensure you have exported a backup first!")) return;
+
+            let filteredScrap = []; let filteredQuotes = [];
+
+            if (range === 'all') {
+                filteredScrap = []; filteredQuotes = [];
+            } else if (range === '365') {
+                const cutoffDate = new Date();
+                cutoffDate.setDate(cutoffDate.getDate() - 365);
+                filteredScrap = state.scrapTransactions.filter(t => new Date(t.date) > cutoffDate);
+                filteredQuotes = state.ringQuoteTransactions.filter(t => new Date(t.date) > cutoffDate);
+            } else if (range === 'custom') {
+                if (!startDateEl || !endDateEl) return alert("Please select both a start and end date for the custom range.");
+                const start = new Date(startDateEl); start.setHours(0,0,0,0);
+                const end = new Date(endDateEl); end.setHours(23,59,59,999);
+                if (start > end) return alert("Start date must be before end date.");
+
+                filteredScrap = state.scrapTransactions.filter(t => { const tDate = new Date(t.date); return tDate < start || tDate > end; });
+                filteredQuotes = state.ringQuoteTransactions.filter(t => { const tDate = new Date(t.date); return tDate < start || tDate > end; });
+            }
+
+            const scrapDeleted = state.scrapTransactions.length - filteredScrap.length;
+            const quotesDeleted = state.ringQuoteTransactions.length - filteredQuotes.length;
+
+            state.scrapTransactions = filteredScrap;
+            state.ringQuoteTransactions = filteredQuotes;
+
+            localStorage.setItem('gr_scrap_ledger', JSON.stringify(state.scrapTransactions));
+            localStorage.setItem('gr_quote_ledger', JSON.stringify(state.ringQuoteTransactions));
+            
+            render();
+            alert(`Success! Deleted ${scrapDeleted} Scrap records and ${quotesDeleted} Quote records.`);
+        }
+
+        // --- CORE LOGIC ---
+        function loadStorageData() {
+            const settings = safeJSONParse('gr_master_settings', null);
+            if (settings) {
+                state.quote.meleePricePerCt = settings.meleePricePerCt || state.quote.meleePricePerCt;
+                state.quote.fancyPricePerCt = settings.fancyPricePerCt || state.quote.fancyPricePerCt;
+                state.quote.goldPricesPerGram = settings.goldPricesPerGram || state.quote.goldPricesPerGram;
+                state.quote.platinumPricePerGram = settings.platinumPricePerGram || state.quote.platinumPricePerGram;
+                state.quote.silverPricePerGram = settings.silverPricePerGram || state.quote.silverPricePerGram;
+                state.quote.rawCostRates = settings.rawCostRates || state.quote.rawCostRates;
+                if (settings.centerStones) state.quote.centerStone.carats = settings.centerStones.tier1?.carats || '';
+            }
+            state.scrapNotes = localStorage.getItem('gr_scrap_notes') || state.scrapNotes;
+        }
+
+        function saveSystemSettings() {
+            const configurations = {
+                meleePricePerCt: state.quote.meleePricePerCt,
+                fancyPricePerCt: state.quote.fancyPricePerCt,
+                goldPricesPerGram: state.quote.goldPricesPerGram,
+                platinumPricePerGram: state.quote.platinumPricePerGram,
+                silverPricePerGram: state.quote.silverPricePerGram,
+                rawCostRates: state.quote.rawCostRates,
+            };
+            localStorage.setItem('gr_master_settings', JSON.stringify(configurations));
+            
+            const btn = document.getElementById('save-settings-btn');
+            if (btn) {
+                btn.innerText = "Settings Auto-Saved!";
+                btn.className = "bg-green-600 text-white font-bold py-2.5 px-6 rounded-xl shadow-md transition-all text-xs md:text-sm";
+                setTimeout(() => {
+                    btn.innerText = "Save Default Settings";
+                    btn.className = "bg-blue-600 text-white font-bold py-2.5 px-6 rounded-xl hover:bg-blue-700 shadow-sm transition-all text-xs md:text-sm";
+                }, 2000);
+            }
+        }
+
+        function toggleScrapNotes() {
+            if (state.isEditingNotes) localStorage.setItem('gr_scrap_notes', state.scrapNotes);
+            state.isEditingNotes = !state.isEditingNotes;
+            render();
+        }
+
+        async function fetchLivePrices() {
+            if (GOLD_API_KEY.includes('INSERT')) return alert("Please map your live GoldAPI token key profile inside the source parameters.");
+            state.syncStatus = 'Fetching...'; updateSpotUI(); 
+            try {
+                const headers = { 'x-access-token': GOLD_API_KEY, 'Content-Type': 'application/json' };
+                const endpoints = ['XAU', 'XAG', 'XPT'];
+                const responses = await Promise.all(endpoints.map(m => fetch(`https://www.goldapi.io/api/${m}/CAD`, { headers }).then(res => res.json())));
+                
+                state.spotPrices.gold = responses[0].price;
+                state.spotPrices.silver = responses[1].price;
+                state.spotPrices.platinum = responses[2].price;
+                state.lastUpdated = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                state.syncStatus = 'Synced';
+                
+                if(state.activeTab === 'calculator') updateScrapUI();
+                if(state.activeTab === 'spot_price') updateSpotUI();
+                if(state.activeTab === 'quote') updateQuoteTotals();
+            } catch (error) {
+                state.syncStatus = 'Failed'; if(state.activeTab === 'spot_price') updateSpotUI();
+                alert("Network connectivity error: " + error.message);
+            }
+        }
+
+        function calculateScrapTotal() {
+            let gross = state.scrapItems.reduce((total, item) => {
+                const w = Number(item.weight) || 0; const r = Number(item.rate) || 0;
+                if (!w) return total;
+                const spot = (state.spotPrices[item.material] || 0) / TROY_ONCE_GRAMS;
+                const purityFactor = item.material === 'gold' ? item.purity / 24 : item.purity;
+                return total + (w * purityFactor * spot * (r / 100));
+            }, 0);
+            let deduction = (Number(state.stoneRemovalQty) || 0) * 5;
+            return Math.max(0, gross - deduction);
+        }
+
+        function updateScrapUI() {
+            state.scrapItems.forEach((item, idx) => {
+                const w = Number(item.weight) || 0; const r = Number(item.rate) || 0;
+                const spot = (state.spotPrices[item.material] || 0) / TROY_ONCE_GRAMS;
+                const purityFactor = item.material === 'gold' ? item.purity / 24 : item.purity;
+                const rowTotal = w * purityFactor * spot * (r / 100);
+                const el = document.getElementById(`scrap-row-total-${idx}`);
+                if (el) el.innerText = '$' + rowTotal.toFixed(2);
+            });
+            const grandEl = document.getElementById('scrap-grand-total');
+            if (grandEl) grandEl.innerText = '$' + calculateScrapTotal().toFixed(2);
+        }
+
+        function updateSpotUI() {
+            const baseGoldGram = state.spotPrices.gold / TROY_ONCE_GRAMS;
+            const baseSilverGram = state.spotPrices.silver / TROY_ONCE_GRAMS;
+            const basePlatGram = state.spotPrices.platinum / TROY_ONCE_GRAMS;
+
+            const gMatrix = document.getElementById('spot-gold-matrix');
+            if(gMatrix) gMatrix.innerHTML = Array.from({length: 15}, (_, i) => i + 10).map(k => `<div class="flex justify-between border-b border-gray-100 pb-1"><span class="font-semibold text-gray-500">${k}k Solid</span><span class="font-mono text-gray-700 font-bold">$${(baseGoldGram * (k / 24)).toFixed(2)}/g</span></div>`).join('');
+            
+            const sMatrix = document.getElementById('spot-silver-matrix');
+            if(sMatrix) sMatrix.innerHTML = [0.999, 0.925, 0.800, 0.700, 0.600, 0.500].map(p => `<div class="flex justify-between border-b border-gray-100 pb-1"><span class="font-semibold text-gray-500">${p === 0.999 ? 'Fine Pure (.999)' : 'Grade Spec ' + p}</span><span class="font-mono text-gray-700 font-bold">$${(baseSilverGram * p).toFixed(2)}/g</span></div>`).join('');
+            
+            const pMatrix = document.getElementById('spot-plat-matrix');
+            if(pMatrix) pMatrix.innerHTML = [0.999, 0.950, 0.900, 0.850].map(p => `<div class="flex justify-between border-b border-gray-100 pb-1"><span class="font-semibold text-gray-500">${p === 0.999 ? 'Fine Pure (.999)' : 'Alloy Assay ' + p}</span><span class="font-mono text-gray-700 font-bold">$${(basePlatGram * p).toFixed(2)}/g</span></div>`).join('');
+
+            const qTotal = document.getElementById('spot-quick-total');
+            if(qTotal) qTotal.innerText = '$' + calculateQuickRawCost();
+        }
+
+        // --- SCRAP GOLD LOGIC ---
+        function updateScrapMaterial(idx, material) {
+            state.scrapItems[idx].material = material;
+            state.scrapItems[idx].purity = material === 'gold' ? 14 : (material === 'silver' ? 0.925 : 0.950);
+            state.scrapItems[idx].rate = material === 'gold' ? 85 : 70;
+            render();
+        }
+
+        function addScrapItem() { state.scrapItems.push({ weight: '', material: 'gold', purity: 14, rate: 85 }); render(); }
+        function removeScrapItem(idx) { state.scrapItems.splice(idx, 1); render(); updateScrapUI(); }
+
+        function saveScrapTransaction() {
+            if (!state.customerName || state.scrapItems.every(i => !i.weight)) return alert("Complete the client identity data and map at least one item.");
+            const total = calculateScrapTotal();
+            const deductionLog = Number(state.stoneRemovalQty) > 0 ? ` [Stones Removed: ${state.stoneRemovalQty} (-$${state.stoneRemovalQty * 5})]` : '';
+            const log = state.scrapItems.filter(i => i.weight).map(i => `${i.weight}g ${i.material} (${i.material==='gold'?i.purity+'k':i.purity})`).join(', ') + deductionLog;
+            
+            state.scrapTransactions.unshift({
+                date: new Date().toLocaleString(), name: state.customerName, phone: state.phoneNumber,
+                summary: log, total: total.toFixed(2), image: state.scrapImage, deduction: (Number(state.stoneRemovalQty) || 0) * 5
+            });
+            
+            try {
+                localStorage.setItem('gr_scrap_ledger', JSON.stringify(state.scrapTransactions));
+                state.customerName = ''; state.phoneNumber = ''; state.address = ''; state.driversLicense = ''; state.stoneRemovalQty = ''; state.scrapImage = null;
+                state.scrapItems = [{ weight: '', material: 'gold', purity: 14, rate: 85 }];
+                render(); alert("Scrap payout logged successfully.");
+            } catch (e) {
+                alert("Storage limit reached! Please clear some old history to save new entries."); state.scrapTransactions.shift();
+            }
+        }
+
+        function calculateQuickRawCost() {
+            const grams = Number(state.quickCalcGrams) || 0;
+            if (!grams) return "0.00";
+            const [metal, spec] = state.quickCalcPurity.split('_');
+            const spot = (state.spotPrices[metal] || 0) / TROY_ONCE_GRAMS;
+            let factor = 1;
+            if (metal === 'gold') factor = Number(spec) / 24;
+            else if (metal === 'silver' || metal === 'platinum') factor = Number(spec) / 1000;
+            return (grams * spot * factor).toFixed(2);
+        }
+
+        // --- RING QUOTE LOGIC ---
+        function calculateRingTotalWithTax() {
+            let totalMeleeCts = 0;
+            (state.quote.melee || []).forEach((m) => { totalMeleeCts += (Number(m.qty) || 0) * m.carat; });
+            const standardRetailMeleeCost = totalMeleeCts * (state.quote.meleePricePerCt || 0);
+
+            const shapeArr = FANCY_SHAPES[state.quote.fancyShape] || FANCY_SHAPES['Princess'];
+            const fancyShapeData = shapeArr[state.quote.fancySizeIdx] || shapeArr[0];
+            const fancyCts = (Number(state.quote.fancyQty) || 0) * fancyShapeData.carat;
+            const retailFancyCost = fancyCts * (state.quote.fancyPricePerCt || 0);
+
+            let retailMaterialCost = 0;
+            const grams = Number(state.quote.goldGrams) || 0;
+            if (state.quote.material === 'gold') retailMaterialCost = grams * (state.quote.goldPricesPerGram[state.quote.goldKarat] || 0);
+            else if (state.quote.material === 'platinum') retailMaterialCost = grams * (state.quote.platinumPricePerGram || 0);
+            else if (state.quote.material === 'silver') retailMaterialCost = grams * (state.quote.silverPricePerGram || 0);
+
+            let retailCenterCost = 0;
+            if (state.quote.type === 'custom') {
+                const centerCarats = Number(state.quote.centerStone?.carats) || 0;
+                let centerMultiplier = state.quote.rawCostRates?.center || 400; 
+                if (centerCarats > 0 && centerCarats < 2.0) centerMultiplier = 1300; 
+                else if (centerCarats >= 2.0 && centerCarats < 3.0) centerMultiplier = 1200;
+                else if (centerCarats >= 3.0) centerMultiplier = 1000;
+                retailCenterCost = centerCarats * centerMultiplier;
+            }
+
+            const customAddon = Number(state.quote.customAddon) || 0;
+            let subtotal = standardRetailMeleeCost + retailFancyCost + retailMaterialCost + retailCenterCost + customAddon;
+
+            if (state.quote.taxGST) subtotal *= 1.05;
+            if (state.quote.taxPST) subtotal *= 1.07;
+            return subtotal;
+        }
+
+        function updateQuoteTotals() {
+            if (state.quote.type === 'mens_band') {
+                const sz = Number(state.quote.mbSize) || 0; const w = Number(state.quote.mbWidth) || 0; const t = Number(state.quote.mbThickness) || 0;
+                if (sz && w && t) {
+                    const diameter = 11.63 + (0.8128 * sz);
+                    const vol_cm3 = (w * t * Math.PI * (diameter + t)) / 1000;
+                    let density = 13.1;
+                    if (state.quote.material === 'gold') density = DENSITIES.gold[state.quote.goldKarat] || 13.1;
+                    else if (state.quote.material === 'platinum') density = DENSITIES.platinum;
+                    else if (state.quote.material === 'silver') density = DENSITIES.silver;
+                    state.quote.goldGrams = (vol_cm3 * density).toFixed(2);
+                } else { state.quote.goldGrams = ''; }
+                const mbWeightDisplay = document.getElementById('mb-calculated-weight');
+                if (mbWeightDisplay) mbWeightDisplay.innerText = state.quote.goldGrams ? state.quote.goldGrams + 'g' : '0.00g';
+            }
+
+            let totalMeleeCts = 0;
+            (state.quote.melee || []).forEach((m, idx) => {
+                const qty = Number(m.qty) || 0;
+                totalMeleeCts += qty * m.carat;
+                const el = document.getElementById(`quote-melee-row-${idx}`);
+                if (el) el.innerText = (qty * m.carat).toFixed(3);
+            });
+
+            const shapeArr = FANCY_SHAPES[state.quote.fancyShape] || FANCY_SHAPES['Princess'];
+            const fancyShapeData = shapeArr[state.quote.fancySizeIdx] || shapeArr[0];
+            const fancyCts = (Number(state.quote.fancyQty) || 0) * fancyShapeData.carat;
+            const elFancySub = document.getElementById('quote-fancy-row-total');
+            if (elFancySub) elFancySub.innerText = fancyCts.toFixed(3);
+
+            const finalRingCost = calculateRingTotalWithTax();
+
+            const elMeleeCts = document.getElementById('quote-total-melee-cts');
+            const elFinalTotal = document.getElementById('quote-final-total');
+
+            if (elMeleeCts) elMeleeCts.innerText = (totalMeleeCts + fancyCts).toFixed(3);
+            if (elFinalTotal) elFinalTotal.innerText = `$${finalRingCost.toFixed(2)}`;
+        }
+
+        function saveRingQuote() {
+            if (!state.quote.cName) return alert("A valid client name is required to save this quote.");
+            const total = document.getElementById('quote-final-total')?.innerText || '$0.00';
+            
+            const itemSummary = state.quote.type === 'mens_band' 
+                ? `Band: Sz ${state.quote.mbSize} (${state.quote.mbWidth}x${state.quote.mbThickness}mm) | ${state.quote.goldGrams || 0}g ${state.quote.material}`
+                : `${state.quote.goldGrams || 0}g ${state.quote.material} | Center: ${state.quote.centerStone?.carats || 0}ct ${state.quote.centerStone?.shape || 'Round'}`;
+            
+            const savedQuoteData = JSON.parse(JSON.stringify(state.quote));
+
+            state.ringQuoteTransactions.unshift({
+                date: new Date().toLocaleString(), name: state.quote.cName, phone: state.quote.cPhone,
+                summary: itemSummary, total: total, fullData: savedQuoteData, image: state.quoteImage
+            });
+            
+            try {
+                localStorage.setItem('gr_quote_ledger', JSON.stringify(state.ringQuoteTransactions));
+                state.quote.cName = ''; state.quote.cPhone = ''; state.quote.goldGrams = ''; state.quote.fancyQty = ''; state.quote.customAddon = ''; state.quote.notes = '';
+                state.quote.mbSize = ''; state.quote.mbWidth = ''; state.quote.mbThickness = ''; 
+                state.quote.cRingSize = ''; state.quote.cBandWidth = ''; state.quote.cBandThickness = ''; 
+                if(!state.quote.centerStone) state.quote.centerStone = {};
+                state.quote.centerStone.carats = '';
+                (state.quote.melee || []).forEach(m => m.qty = ''); state.quote.taxGST = false; state.quote.taxPST = false;
+                state.quoteImage = null; bgImageObj = null;
+                render(); alert("Client Quote saved to ledger successfully.");
+            } catch (e) {
+                alert("Storage limit reached! Photos take up space. Please clear some old history to save new ones.");
+                state.ringQuoteTransactions.shift();
+            }
+        }
+
+        // --- MODAL CONTROLLERS ---
+        function showScrapDetails(idx) {
+            const t = state.scrapTransactions[idx];
+            const modal = document.getElementById('modal-backdrop');
+            document.getElementById('modal-content').innerHTML = `
+                <div id="print-area">
+                    <div class="text-center mb-6">
+                        <h1 style="font-family: 'Playfair Display', serif;" class="text-3xl italic text-gray-800">Gold and Rose Jewellery</h1>
+                        <h2 class="text-sm font-bold text-gray-500 uppercase mt-1">Scrap Buyback Receipt</h2>
+                    </div>
+                    <div class="space-y-3 text-sm border-t pt-4">
+                        <p><strong>Timestamp:</strong> ${t.date}</p>
+                        <p><strong>Customer:</strong> ${t.name}</p>
+                        <p><strong>Phone:</strong> ${t.phone || 'N/A'}</p>
+                        <hr>
+                        <p><strong>Items Received:</strong> ${t.summary}</p>
+                        <p class="text-lg font-bold text-green-600 mt-2">Total Payout: $${t.total}</p>
+                        ${t.image ? `<div class="mt-4"><p class="mb-2 text-xs font-bold text-gray-500 uppercase">ID / Reference Image:</p><img src="${t.image}" class="w-full max-w-[250px] rounded-lg border border-gray-300 shadow-sm" /></div>` : ''}
+                    </div>
+                </div>
+                <div id="print-button" class="mt-6 flex gap-2">
+                    <button onclick="window.print()" class="flex-1 bg-green-600 text-white py-3 rounded-xl font-bold shadow-sm">Print Receipt</button>
+                    <button onclick="document.getElementById('modal-backdrop').classList.add('hidden')" class="flex-1 bg-gray-200 py-3 rounded-xl font-bold shadow-sm">Close</button>
+                </div>
+            `;
+            modal.classList.remove('hidden');
+        }
+
+        function showQuoteDetails(idx) {
+            const q = state.ringQuoteTransactions[idx];
+            const d = q.fullData;
+            
+            let meleeSummary = (d.melee || []).filter(m => Number(m.qty) > 0).map(m => `${m.qty}x (${m.size}mm)`).join(', ');
+            if (!meleeSummary) meleeSummary = "None";
+            
+            let taxArray = [];
+            if (d.taxGST) taxArray.push("GST (5%)");
+            if (d.taxPST) taxArray.push("PST (7%)");
+            const taxStr = taxArray.length > 0 ? taxArray.join(" + ") : "Exempt";
+
+            const isBand = d.type === 'mens_band';
+
+            const modal = document.getElementById('modal-backdrop');
+            document.getElementById('modal-content').innerHTML = `
+                <div id="print-area">
+                    <div class="text-center mb-6">
+                        <h1 style="font-family: 'Playfair Display', serif;" class="text-3xl italic text-gray-800">Gold and Rose Jewellery</h1>
+                        <p class="text-xs text-gray-600 mt-1">4501 North Rd #209, Burnaby, BC V3N 4J5</p>
+                        <p class="text-xs text-gray-600">Phone: (604) 420-9077</p>
+                        <h2 class="text-sm font-bold text-gray-500 uppercase mt-4">Custom ${isBand ? 'Band' : 'Ring'} Quotation</h2>
+                    </div>
+                    <div class="space-y-3 text-sm border-t pt-4">
+                        <p><strong>Date:</strong> ${q.date}</p>
+                        <p><strong>Client Name:</strong> ${q.name}</p>
+                        <p><strong>Contact Info:</strong> ${q.phone || 'N/A'}</p>
+                        <hr class="my-2 border-gray-200">
+                        
+                        ${isBand 
+                            ? `<p><strong>Band Specifications:</strong> Size ${d.mbSize} (US) • ${d.mbWidth}mm width • ${d.mbThickness}mm thick</p>` 
+                            : `<p><strong>Centerstone:</strong> ${d.centerStone?.carats || '0'} ct ${d.centerStone?.shape || 'Round'}</p>
+                               ${d.cRingSize || d.cBandWidth || d.cBandThickness ? `<p><strong>Ring Specs:</strong> Size ${d.cRingSize || 'N/A'} (US) • ${d.cBandWidth || 0}mm width • ${d.cBandThickness || 0}mm thick</p>` : ''}`
+                        }
+                        
+                        <p><strong>Ring Metal Base:</strong> ${d.goldGrams || 0}g ${d.material} (${d.material === 'gold' ? d.goldKarat + 'k' : 'Solid'})</p>
+                        <p><strong>Fancy Accent Stones:</strong> ${d.fancyShape} Shape (${d.fancyQty || 0} units)</p>
+                        <p><strong>Standard Melee Layout:</strong> ${meleeSummary}</p>
+                        ${d.notes ? `<div class="bg-gray-50 p-3 rounded-lg border text-gray-700 italic mt-2"><strong>Notes:</strong> ${d.notes}</div>` : ''}
+                        
+                        <div class="mt-4 pt-4 border-t border-gray-200">
+                            <p class="text-xs text-gray-500 uppercase font-bold">Tax Application: ${taxStr}</p>
+                            <p class="text-2xl font-black text-blue-800 mt-1">Estimated Final Price: ${q.total}</p>
+                        </div>
+                        
+                        ${q.image ? `<div class="mt-4"><p class="mb-2 text-xs font-bold text-gray-500 uppercase">Design Reference / Sketch:</p><img src="${q.image}" class="w-full max-w-[200px] rounded-lg border border-gray-300 shadow-sm" /></div>` : ''}
+                        
+                        <div class="mt-8 pt-4 border-t border-gray-800">
+                            <p class="text-[10px] text-gray-500 italic text-justify">* Note: This is an estimated consultation quote. Due to daily fluctuations in the global spot price of precious metals and variations in the final cast weight of raw materials, prices are subject to final adjustment and review prior to manufacturing.</p>
+                        </div>
+                    </div>
+                </div>
+                <div id="print-button" class="mt-6 flex flex-col sm:flex-row gap-2">
+                    <button onclick="loadQuoteIntoEditor(${idx})" class="flex-1 bg-blue-600 text-white py-3 rounded-xl font-bold shadow-sm">Load to Editor</button>
+                    <button onclick="window.print()" class="flex-1 bg-green-600 text-white py-3 rounded-xl font-bold shadow-sm">Print Handout</button>
+                    <button onclick="document.getElementById('modal-backdrop').classList.add('hidden')" class="flex-1 bg-gray-200 text-gray-800 py-3 rounded-xl font-bold shadow-sm">Close Window</button>
+                </div>
+            `;
+            modal.classList.remove('hidden');
+        }
+
+        function loadQuoteIntoEditor(idx) {
+            const q = state.ringQuoteTransactions[idx];
+            state.quote = JSON.parse(JSON.stringify(q.fullData)); 
+            
+            if(!state.quote.centerStone) state.quote.centerStone = { carats: '', shape: 'Round' };
+            if(!state.quote.melee) state.quote.melee = [];
+            
+            state.quoteImage = q.image || null; bgImageObj = null; 
+            state.activeTab = 'quote'; document.getElementById('modal-backdrop').classList.add('hidden');
+            render();
+        }
+
+        // --- HTML TEMPLATE BUILDERS ---
+        function buildTabsHTML() {
+            const tabs = ['calculator', 'quote', 'baby_rings', 'spot_price', 'settings', 'ledger'];
+            const labels = {'calculator': 'Scrap Gold', 'quote': 'Ring Quote', 'baby_rings': 'Baby Rings', 'spot_price': 'Spot Price', 'settings': 'Settings', 'ledger': 'Ledger History'};
+            return `
+                <div class="flex border-b border-gray-200 mb-6 bg-white rounded-t-2xl px-4 pt-4 shadow-sm overflow-x-auto scrollbar-none">
+                    ${tabs.map(t => `<button onclick="state.activeTab='${t}'; render()" class="py-3 px-5 font-bold text-sm md:text-base rounded-t-lg transition-all whitespace-nowrap ${state.activeTab === t ? 'bg-blue-50 text-blue-700 border-b-4 border-blue-600' : 'text-gray-500 hover:text-gray-700'}">${labels[t]}</button>`).join('')}
+                </div>
+            `;
+        }
+
+        function buildScrapHTML() {
+            return `
+                <div class="p-4 md:p-8 bg-white rounded-b-2xl rounded-tr-2xl shadow-lg border border-gray-100 space-y-8 animate-fadeIn">
+                    <div class="relative bg-white rounded-[2rem] py-10 px-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] text-center border border-gray-100/80 overflow-hidden">
+                        <h3 class="text-gray-400 uppercase tracking-[0.2em] text-xs font-bold mb-3">Final Cash Offer (CAD)</h3>
+                        <p id="scrap-grand-total" class="text-6xl md:text-7xl font-black text-green-600 tracking-tighter">$${calculateScrapTotal().toFixed(2)}</p>
+                    </div>
+                    
+                    <div class="space-y-4">
+                        <div class="flex justify-between items-center px-1">
+                            <h3 class="text-xs font-bold text-gray-400 uppercase tracking-widest">Global Valuation Sync</h3>
+                            <button onclick="fetchLivePrices()" class="text-xs bg-blue-600 text-white px-4 py-1.5 rounded-xl font-bold hover:bg-blue-700 shadow-sm transition-all">Sync Market Rate (${state.syncStatus})</button>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            ${['gold', 'silver', 'platinum'].map(m => `
+                                <div class="bg-gray-50 p-4 rounded-xl border border-gray-200 shadow-sm">
+                                    <label class="text-xs font-bold text-gray-500 uppercase tracking-wider block mb-2">${m.toUpperCase()} (per Oz)</label>
+                                    <input type="number" class="w-full p-2.5 border rounded-xl font-bold text-lg bg-white no-spinner shadow-inner" value="${state.spotPrices[m]}" oninput="state.spotPrices.${m}=Number(this.value); updateScrapUI();" />
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+
+                    <div class="bg-gray-50 p-5 rounded-2xl border border-gray-200/60 space-y-4">
+                        <div class="flex justify-between items-center border-b pb-2 flex-wrap gap-2">
+                            <h3 class="text-xs font-bold text-gray-400 uppercase tracking-widest">Client Intakes</h3>
+                            <div class="flex items-center gap-3">
+                                ${state.scrapImage ? `<img src="${state.scrapImage}" class="h-8 w-8 object-cover rounded border border-gray-300 shadow-sm" /> <button onclick="state.scrapImage=null; render()" class="text-[10px] text-red-500 font-bold hover:underline">Remove</button>` : ''}
+                                <label class="cursor-pointer text-xs bg-gray-200 text-gray-700 px-3 py-1.5 rounded-lg font-bold hover:bg-gray-300 transition-all flex items-center gap-1 shadow-sm">
+                                    ${ICONS.camera} ${state.scrapImage ? 'Retake ID' : 'Scan ID'}
+                                    <input type="file" accept="image/*" capture="environment" class="hidden" onchange="handleBasicImageUpload(event, 'scrap')" />
+                                </label>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
+                            <input type="text" placeholder="Full Name" class="border p-3 rounded-xl bg-white text-sm" value="${state.customerName}" oninput="state.customerName=this.value" />
+                            <input type="tel" placeholder="Phone Number" class="border p-3 rounded-xl bg-white text-sm" value="${state.phoneNumber}" oninput="state.phoneNumber=this.value" />
+                            <input type="text" placeholder="Full Address" class="border p-3 rounded-xl bg-white text-sm md:col-span-2" value="${state.address}" oninput="state.address=this.value" />
+                            
+                            <input type="text" placeholder="Driver's License / ID" class="border p-3 rounded-xl bg-white text-sm" value="${state.driversLicense}" oninput="state.driversLicense=this.value" />
+                            <div class="flex items-center border p-2 rounded-xl bg-white shadow-inner">
+                                <span class="text-[10px] font-bold text-gray-400 uppercase px-2 whitespace-nowrap">Stone Removal (-$5/ea):</span>
+                                <input type="number" class="w-full bg-transparent text-sm font-bold outline-none text-red-600 no-spinner" placeholder="0" value="${state.stoneRemovalQty}" oninput="state.stoneRemovalQty=this.value; updateScrapUI()" />
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-blue-50/40 p-4 md:p-6 rounded-2xl border border-blue-100 space-y-4">
+                        <h3 class="text-xs font-bold text-blue-800 uppercase tracking-widest border-b border-blue-200 pb-2">Scrap Items</h3>
+                        ${state.scrapItems.map((item, idx) => `
+                            <div class="grid grid-cols-1 md:grid-cols-6 gap-3 items-center bg-white p-3 rounded-xl border border-blue-100/50 shadow-sm">
+                                <input type="number" placeholder="Mass (g)" class="border p-2.5 rounded-xl font-semibold text-sm no-spinner w-full shadow-inner" value="${item.weight}" oninput="state.scrapItems[${idx}].weight=this.value; updateScrapUI()" />
+                                <select class="border p-2.5 rounded-xl text-sm bg-white font-medium w-full" onchange="updateScrapMaterial(${idx}, this.value)">
+                                    <option value="gold" ${item.material==='gold'?'selected':''}>Gold</option>
+                                    <option value="silver" ${item.material==='silver'?'selected':''}>Silver</option>
+                                    <option value="platinum" ${item.material==='platinum'?'selected':''}>Platinum</option>
+                                </select>
+                                <select class="border p-2.5 rounded-xl text-sm bg-white font-medium w-full" onchange="state.scrapItems[${idx}].purity=Number(this.value); updateScrapUI()">
+                                    ${PURITY_OPTIONS[item.material].map(p=>`<option value="${p}" ${p===item.purity?'selected':''}>${item.material==='gold'? p+'k': p}</option>`).join('')}
+                                </select>
+                                <div class="flex items-center gap-1"><input type="number" class="border p-2.5 rounded-xl text-sm font-semibold text-center w-full shadow-inner" value="${item.rate}" oninput="state.scrapItems[${idx}].rate=this.value; updateScrapUI()" /><span class="text-xs font-bold text-gray-400">%</span></div>
+                                <div id="scrap-row-total-${idx}" class="text-sm font-black text-blue-900 text-right pr-2">$${(((item.weight * (item.material==='gold' ? item.purity/24 : item.purity) * (state.spotPrices[item.material]/TROY_ONCE_GRAMS)) * (item.rate/100)) || 0).toFixed(2)}</div>
+                                <button onclick="removeScrapItem(${idx})" class="text-red-400 hover:text-red-600 font-bold p-1 text-lg text-center hidden md:block">&times;</button>
+                                <button onclick="removeScrapItem(${idx})" class="w-full bg-red-50 text-red-500 font-bold text-xs py-2 rounded-lg md:hidden">Delete Item Entry</button>
+                            </div>
+                        `).join('')}
+                        <button onclick="addScrapItem()" class="w-full border-2 border-dashed border-blue-200 py-3 rounded-xl text-blue-600 font-bold text-sm bg-white hover:bg-blue-50/50 transition-all">+ Add New Entry Row</button>
+                    </div>
+                    <button onclick="saveScrapTransaction()" class="w-full bg-blue-600 text-white font-black text-sm tracking-wider uppercase py-4 rounded-xl hover:bg-blue-700 transition-all shadow-md">Commit Payout Log & Save</button>
+                    
+                    <div class="bg-amber-50/60 p-5 rounded-2xl border border-amber-200 shadow-sm mt-6">
+                        <div class="flex justify-between items-center mb-3">
+                            <h3 class="text-xs font-bold text-amber-800 uppercase tracking-widest">Internal Operations Reference Logs</h3>
+                            <button onclick="toggleScrapNotes()" class="text-xs font-semibold text-amber-700 bg-amber-100 border border-amber-200 px-3 py-1 rounded-xl transition-all">
+                                ${state.isEditingNotes ? '🔒 Save & Lock System Logs' : '✏️ Modify Reference Logs'}
+                            </button>
+                        </div>
+                        ${state.isEditingNotes ? 
+                            `<textarea class="w-full p-3 rounded-xl border border-amber-300 bg-white text-sm font-medium focus:ring-2 focus:ring-amber-200 shadow-inner" rows="4" oninput="state.scrapNotes=this.value">${state.scrapNotes}</textarea>` : 
+                            `<div class="whitespace-pre-wrap text-xs text-amber-900 font-medium leading-relaxed bg-amber-50 p-4 rounded-xl border border-amber-100/70">${state.scrapNotes || 'No operative internal metadata guidelines stored.'}</div>`
+                        }
+                    </div>
+                </div>
+            `;
+        }
+
+        function buildQuoteHTML() {
+            const shapeOpts = Object.keys(FANCY_SHAPES);
+            const activeShapeArray = FANCY_SHAPES[state.quote.fancyShape] || FANCY_SHAPES['Princess'];
+
+            return `
+                <div class="p-4 md:p-8 bg-white rounded-b-2xl rounded-tr-2xl shadow-lg border border-gray-100 animate-fadeIn">
+                    <div class="flex justify-center mb-6">
+                        <div class="bg-gray-100 p-1.5 rounded-xl flex gap-1 shadow-inner border border-gray-200">
+                            <button onclick="state.quote.type='custom'; render()" class="px-6 py-2 rounded-lg text-sm font-bold transition-all ${state.quote.type==='custom'?'bg-white shadow text-blue-700':'text-gray-500 hover:text-gray-700'}">Engagement / Custom</button>
+                            <button onclick="state.quote.type='mens_band'; render()" class="px-6 py-2 rounded-lg text-sm font-bold transition-all ${state.quote.type==='mens_band'?'bg-white shadow text-blue-700':'text-gray-500 hover:text-gray-700'}">Men's Band</button>
+                        </div>
+                    </div>
+
+                    <div class="mb-6 bg-gray-50 p-5 rounded-2xl border border-gray-200/80">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div class="space-y-1">
+                                <label class="text-[10px] font-bold text-gray-400 uppercase tracking-wider block pl-1">Client Name</label>
+                                <input type="text" placeholder="Input Client Name" class="border p-2.5 rounded-xl bg-white text-sm w-full font-medium shadow-inner" value="${state.quote.cName}" oninput="state.quote.cName=this.value" />
+                            </div>
+                            <div class="space-y-1">
+                                <label class="text-[10px] font-bold text-gray-400 uppercase tracking-wider block pl-1">Contact Phone Number</label>
+                                <input type="tel" placeholder="Input Contact Profile" class="border p-2.5 rounded-xl bg-white text-sm w-full font-medium shadow-inner" value="${state.quote.cPhone}" oninput="state.quote.cPhone=this.value" />
+                            </div>
+                        </div>
+                        <div class="mt-4 pt-4 border-t border-gray-200 flex flex-wrap items-center justify-between gap-3">
+                            <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider pl-1">Reference Photo / Design Idea</span>
+                            <div class="flex items-center gap-3">
+                                ${state.quoteImage ? `<img src="${state.quoteImage}" class="h-10 w-10 object-cover rounded border border-gray-300 shadow-sm" /> <button onclick="state.quoteImage=null; bgImageObj=null; render()" class="text-[10px] text-red-500 font-bold hover:underline">Remove</button>` : ''}
+                                <button onclick="openSketcher()" class="text-xs bg-blue-100 text-blue-700 px-3 py-1.5 rounded-lg font-bold hover:bg-blue-200 transition-all flex items-center gap-1 shadow-sm border border-blue-200">
+                                    ${ICONS.pen} Sketch Design
+                                </button>
+                                <label class="cursor-pointer text-xs bg-gray-200 text-gray-700 px-3 py-1.5 rounded-lg font-bold hover:bg-gray-300 transition-all flex items-center gap-1 shadow-sm border border-gray-300">
+                                    ${ICONS.camera} ${state.quoteImage ? 'Replace Photo' : 'Attach Photo'}
+                                    <input type="file" accept="image/*" capture="environment" class="hidden" onchange="handleImageUpload(event, 'quote')" />
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-8 flex flex-col justify-center items-center bg-gray-900 text-white p-6 rounded-2xl shadow-inner gap-4 relative overflow-hidden">
+                        <div class="absolute right-4 top-4 flex flex-col gap-2 z-10">
+                            <label class="flex items-center gap-2 text-xs font-bold text-gray-300 bg-gray-800 px-3 py-1.5 rounded-lg cursor-pointer hover:bg-gray-700 transition">
+                                <input type="checkbox" class="accent-blue-500" ${state.quote.taxGST?'checked':''} onchange="state.quote.taxGST=this.checked; updateQuoteTotals()"> GST (5%)
+                            </label>
+                            <label class="flex items-center gap-2 text-xs font-bold text-gray-300 bg-gray-800 px-3 py-1.5 rounded-lg cursor-pointer hover:bg-gray-700 transition">
+                                <input type="checkbox" class="accent-blue-500" ${state.quote.taxPST?'checked':''} onchange="state.quote.taxPST=this.checked; updateQuoteTotals()"> PST (7%)
+                            </label>
+                        </div>
+                        <div class="text-center w-full z-0 mt-4 md:mt-0">
+                            <h3 class="text-gray-400 uppercase tracking-widest text-[10px] font-bold">Final Price</h3>
+                            <p id="quote-final-total" class="text-4xl md:text-5xl font-black text-green-400 tracking-tighter mt-1">$0.00</p>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                        <div class="space-y-4">
+                            <div class="border-b border-gray-100 pb-2"><h3 class="text-xs font-bold text-gray-700 uppercase tracking-widest">Melee Calibration Configuration</h3></div>
+                            <div class="bg-white rounded-xl border border-gray-200 overflow-hidden text-xs shadow-sm">
+                                <div class="grid grid-cols-4 bg-gray-50 font-bold text-gray-400 text-[10px] uppercase p-3 border-b">
+                                    <div>Dimension</div><div>Carats</div><div>Quantity</div><div class="text-right">Sum Weight</div>
+                                </div>
+                                <div class="max-h-80 overflow-y-auto divide-y divide-gray-100">
+                                    ${state.quote.melee.map((m, idx) => `
+                                        <div class="grid grid-cols-4 items-center p-2 hover:bg-gray-50/80 transition-colors">
+                                            <div class="font-bold text-gray-700 pl-1">${m.size} mm</div>
+                                            <div class="text-gray-500">${m.carat} ct</div>
+                                            <div><input type="number" placeholder="0" class="border p-1.5 rounded-lg w-16 text-center no-spinner font-semibold bg-white shadow-inner focus:ring-2 focus:ring-blue-100" value="${m.qty}" oninput="state.quote.melee[${idx}].qty=this.value; updateQuoteTotals()" /></div>
+                                            <div id="quote-melee-row-${idx}" class="text-right font-semibold text-gray-600 pr-2">0.000</div>
+                                        </div>
+                                    `).join('')}
+                                </div>
+                                <div class="bg-gray-100/80 p-3 border-t border-gray-200 space-y-2">
+                                    <h4 class="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Dynamic Fancy Cut Melee Integration</h4>
+                                    <div class="grid grid-cols-4 items-center gap-2">
+                                        <select class="border p-2 rounded-xl w-full font-bold text-[11px] bg-white text-gray-700 shadow-sm" onchange="state.quote.fancyShape=this.value; state.quote.fancySizeIdx=0; render()">
+                                            ${shapeOpts.map(s => `<option value="${s}" ${state.quote.fancyShape===s?'selected':''}>${s}</option>`).join('')}
+                                        </select>
+                                        <select class="border p-2 rounded-xl w-full text-[11px] font-medium text-gray-600 bg-white shadow-sm" onchange="state.quote.fancySizeIdx=Number(this.value); updateQuoteTotals(); render()">
+                                            ${activeShapeArray.map((sz, idx) => `<option value="${idx}" ${state.quote.fancySizeIdx===idx?'selected':''}>${sz.label}</option>`).join('')}
+                                        </select>
+                                        <input type="number" placeholder="Units" class="border p-2 rounded-xl w-full text-center no-spinner font-semibold bg-white text-xs shadow-inner focus:ring-2 focus:ring-blue-100" value="${state.quote.fancyQty}" oninput="state.quote.fancyQty=this.value; updateQuoteTotals()" />
+                                        <div id="quote-fancy-row-total" class="text-right font-black text-gray-700 pr-2">0.000</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="p-3.5 bg-blue-50/50 border border-blue-100 rounded-xl flex justify-between items-center">
+                                <div class="text-xs font-bold text-blue-800 uppercase tracking-wider">Total Melee Carats</div>
+                                <div class="text-right"><span id="quote-total-melee-cts" class="text-xl font-black text-blue-950">0.000</span> <span class="text-xs font-bold text-blue-600">cts</span></div>
+                            </div>
+                        </div>
+
+                        <div class="space-y-5">
+                            <div class="bg-gray-50 p-5 rounded-2xl border border-gray-200/80 space-y-4">
+                                <h3 class="text-xs font-bold text-gray-700 uppercase tracking-widest border-b pb-2">Ring Metal</h3>
+                                <div class="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label class="text-[10px] font-bold text-gray-400 uppercase block mb-1">Elemental Base</label>
+                                        <select class="border p-2.5 rounded-xl w-full text-sm font-semibold bg-white shadow-sm" onchange="state.quote.material=this.value; updateQuoteTotals(); render()">
+                                            <option value="gold" ${state.quote.material==='gold'?'selected':''}>Gold Base</option>
+                                            <option value="platinum" ${state.quote.material==='platinum'?'selected':''}>Platinum Base</option>
+                                            <option value="silver" ${state.quote.material==='silver'?'selected':''}>Silver Base</option>
+                                        </select>
+                                    </div>
+                                    ${state.quote.material === 'gold' ? `
+                                    <div>
+                                        <label class="text-[10px] font-bold text-gray-400 uppercase block mb-1">Purity Tier</label>
+                                        <select class="border p-2.5 rounded-xl w-full text-sm font-semibold bg-white shadow-sm" onchange="state.quote.goldKarat=Number(this.value); updateQuoteTotals()">
+                                            ${Object.keys(state.quote.goldPricesPerGram).map(k => `<option value="${k}" ${Number(k)===state.quote.goldKarat?'selected':''}>${k}k Premium</option>`).join('')}
+                                        </select>
+                                    </div>
+                                    ` : '<div></div>'}
+                                </div>
+                                ${state.quote.type === 'mens_band' ? `
+                                    <div class="grid grid-cols-3 gap-3 border-t border-gray-200 pt-3 mt-1">
+                                        <div><label class="text-[10px] font-bold text-gray-400 uppercase block mb-1">US Size</label><input type="number" class="border p-2.5 rounded-xl w-full font-bold text-sm bg-white shadow-inner" placeholder="0.0" value="${state.quote.mbSize}" oninput="state.quote.mbSize=this.value; updateQuoteTotals()" /></div>
+                                        <div><label class="text-[10px] font-bold text-gray-400 uppercase block mb-1">Width (mm)</label><input type="number" class="border p-2.5 rounded-xl w-full font-bold text-sm bg-white shadow-inner" placeholder="0.0" value="${state.quote.mbWidth}" oninput="state.quote.mbWidth=this.value; updateQuoteTotals()" /></div>
+                                        <div><label class="text-[10px] font-bold text-gray-400 uppercase block mb-1">Thick (mm)</label><input type="number" class="border p-2.5 rounded-xl w-full font-bold text-sm bg-white shadow-inner" placeholder="0.0" value="${state.quote.mbThickness}" oninput="state.quote.mbThickness=this.value; updateQuoteTotals()" /></div>
+                                    </div>
+                                    <div class="bg-blue-100/50 p-2.5 rounded-xl border border-blue-200 mt-3 text-center">
+                                        <span class="text-[10px] font-bold text-blue-600 uppercase block">Calculated Raw Weight</span>
+                                        <span id="mb-calculated-weight" class="text-lg font-black text-blue-900">${state.quote.goldGrams ? state.quote.goldGrams + 'g' : '0.00g'}</span>
+                                    </div>
+                                ` : `
+                                    <div>
+                                        <label class="text-[10px] font-bold text-gray-400 uppercase block mb-1">Finished Structural Weight (Grams)</label>
+                                        <input type="number" class="border p-3 rounded-xl w-full font-bold text-sm bg-white shadow-inner" placeholder="0.00g" value="${state.quote.goldGrams}" oninput="state.quote.goldGrams=this.value; updateQuoteTotals()" />
+                                    </div>
+                                    <div class="grid grid-cols-3 gap-3 border-t border-gray-200 pt-3 mt-4">
+                                        <div><label class="text-[10px] font-bold text-gray-400 uppercase block mb-1">US Size</label><input type="number" class="border p-2.5 rounded-xl w-full font-bold text-sm bg-white shadow-inner text-gray-500" placeholder="Record Only" value="${state.quote.cRingSize || ''}" oninput="state.quote.cRingSize=this.value" /></div>
+                                        <div><label class="text-[10px] font-bold text-gray-400 uppercase block mb-1">Width (mm)</label><input type="number" class="border p-2.5 rounded-xl w-full font-bold text-sm bg-white shadow-inner text-gray-500" placeholder="Record Only" value="${state.quote.cBandWidth || ''}" oninput="state.quote.cBandWidth=this.value" /></div>
+                                        <div><label class="text-[10px] font-bold text-gray-400 uppercase block mb-1">Thick (mm)</label><input type="number" class="border p-2.5 rounded-xl w-full font-bold text-sm bg-white shadow-inner text-gray-500" placeholder="Record Only" value="${state.quote.cBandThickness || ''}" oninput="state.quote.cBandThickness=this.value" /></div>
+                                    </div>
+                                `}
+                            </div>
+
+                            ${state.quote.type === 'custom' ? `
+                                <div class="bg-white p-5 rounded-2xl border border-gray-200 shadow-sm">
+                                    <h3 class="text-xs font-bold text-gray-700 uppercase tracking-widest border-b pb-2 mb-3">Centerstone</h3>
+                                    <div class="flex gap-3">
+                                        <div class="w-1/2">
+                                            <label class="text-[10px] font-bold text-gray-400 uppercase block mb-1">Shape</label>
+                                            <select class="border p-3 rounded-xl w-full text-sm font-bold bg-gray-50 shadow-inner" onchange="state.quote.centerStone.shape=this.value; updateQuoteTotals()">
+                                                ${CENTER_SHAPES.map(s => `<option value="${s}" ${state.quote.centerStone?.shape === s ? 'selected' : ''}>${s}</option>`).join('')}
+                                            </select>
+                                        </div>
+                                        <div class="w-1/2">
+                                            <label class="text-[10px] font-bold text-gray-400 uppercase block mb-1">Total Carat Weight</label>
+                                            <input type="number" class="border p-3 rounded-xl w-full text-sm font-bold bg-gray-50 shadow-inner" placeholder="0.00 ct" value="${state.quote.centerStone?.carats || ''}" oninput="state.quote.centerStone.carats=this.value; updateQuoteTotals()" />
+                                        </div>
+                                    </div>
+                                </div>
+                            ` : ''}
+
+                            <div class="bg-white p-5 rounded-2xl border border-gray-200 shadow-sm space-y-4">
+                                <div><h3 class="text-xs font-bold text-gray-700 uppercase tracking-widest border-b pb-2 mb-2">Addons</h3><input type="number" class="border p-3 rounded-xl w-full font-bold text-sm bg-white shadow-inner text-green-700" placeholder="$0.00 Addon" value="${state.quote.customAddon}" oninput="state.quote.customAddon=this.value; updateQuoteTotals()" /></div>
+                                <div><h3 class="text-xs font-bold text-gray-700 uppercase tracking-widest border-b pb-2 mb-2">Production Notes</h3><textarea class="border p-3 rounded-xl w-full text-sm bg-gray-50 shadow-inner focus:bg-white" rows="3" placeholder="Enter design specs, chain lengths, sizing, etc." oninput="state.quote.notes=this.value">${state.quote.notes}</textarea></div>
+                            </div>
+                            
+                            <button onclick="saveRingQuote()" class="w-full bg-gray-900 text-white p-4 rounded-xl font-bold text-sm uppercase tracking-wider shadow-md hover:bg-black transition-all">Save Quote</button>
+                        </div>
+                    </div>
+                </div>
+
+                ${state.isSketching ? `
+                    <div class="fixed inset-0 bg-gray-100 z-[100] flex flex-col animate-fadeIn">
+                        <div class="flex justify-between items-center p-4 bg-gray-900 text-white shadow-md z-10">
+                            <h3 class="font-bold tracking-widest uppercase text-sm">Design Sketchpad</h3>
+                            <div class="flex gap-3 items-center">
+                                <button onclick="clearSketch()" class="text-xs text-red-400 font-bold hover:text-red-300 px-2">Clear</button>
+                                <button onclick="closeSketcher()" class="text-xs text-gray-400 font-bold hover:text-gray-300 px-2 border-r border-gray-700 pr-4">Cancel</button>
+                                <button onclick="saveSketch()" class="text-xs bg-blue-600 hover:bg-blue-500 px-4 py-2 rounded-lg font-bold transition-all shadow-sm">Save</button>
+                            </div>
+                        </div>
+                        
+                        <div class="flex-1 relative overflow-hidden bg-white cursor-crosshair" id="sketch-container">
+                            <img id="sketch-bg" style="display: none; position: absolute; pointer-events: none;" />
+                            <div id="transform-box">
+                                <div id="handle-rotate" class="transform-handle">${ICONS.rotate}</div>
+                                <div id="handle-scale" class="transform-handle">${ICONS.scale}</div>
+                            </div>
+                            <canvas id="sketch-canvas" class="absolute inset-0 w-full h-full touch-none"></canvas>
+                        </div>
+
+                        <div class="absolute bottom-6 left-1/2 -translate-x-1/2 bg-white/95 backdrop-blur-xl px-4 py-3 rounded-2xl shadow-2xl border border-gray-200 flex flex-wrap justify-center gap-4 sm:gap-6 items-center z-20 w-[90%] sm:w-auto">
+                            <div class="flex gap-2 border-r pr-4 sm:pr-6 border-gray-200 text-gray-600">
+                                <button id="tool-pen" onclick="setSketchTool('pen')" class="p-2 bg-blue-50 text-blue-600 rounded-xl shadow-inner border-2 border-blue-500 transition-all" title="Pen Tool">${ICONS.pen}</button>
+                                <button id="tool-highlighter" onclick="setSketchTool('highlighter')" class="p-2 bg-transparent hover:bg-gray-100 rounded-xl border-2 border-transparent transition-all" title="Highlighter">${ICONS.highlighter}</button>
+                                <button id="tool-eraser" onclick="setSketchTool('eraser')" class="p-2 bg-transparent hover:bg-gray-100 rounded-xl border-2 border-transparent transition-all" title="Eraser">${ICONS.eraser}</button>
+                                <button id="tool-transform" onclick="setSketchTool('transform')" class="p-2 bg-transparent hover:bg-gray-100 rounded-xl border-2 border-transparent transition-all" title="Move & Scale Image">${ICONS.transform}</button>
+                            </div>
+                            
+                            <div class="flex flex-col gap-1 border-r pr-4 sm:pr-6 border-gray-200 items-center justify-center min-w-[80px]">
+                                <label class="cursor-pointer text-[10px] font-bold text-gray-700 bg-gray-100 px-2 py-1 rounded-md hover:bg-gray-200 transition-all text-center flex items-center gap-1">
+                                    ${ICONS.camera} Photo
+                                    <input type="file" accept="image/*" class="hidden" onchange="handleSketchBgUpload(event)" />
+                                </label>
+                            </div>
+
+                            <div class="flex gap-2 sm:gap-3 border-r pr-4 sm:pr-6 border-gray-200">
+                                <button id="color-black" onclick="setSketchColor('#000000', 'black')" class="w-6 h-6 sm:w-8 sm:h-8 rounded-full bg-black border-2 border-transparent shadow-sm scale-100 transition-all"></button>
+                                <button id="color-blue" onclick="setSketchColor('#1e3a8a', 'blue')" class="w-6 h-6 sm:w-8 sm:h-8 rounded-full bg-blue-800 border-2 border-gray-400 shadow-sm scale-110 transition-all"></button>
+                                <button id="color-red" onclick="setSketchColor('#dc2626', 'red')" class="w-6 h-6 sm:w-8 sm:h-8 rounded-full bg-red-600 border-2 border-transparent shadow-sm scale-100 transition-all"></button>
+                                <button id="color-green" onclick="setSketchColor('#16a34a', 'green')" class="w-6 h-6 sm:w-8 sm:h-8 rounded-full bg-green-600 border-2 border-transparent shadow-sm scale-100 transition-all"></button>
+                                <button id="color-yellow" onclick="setSketchColor('#facc15', 'yellow')" class="w-6 h-6 sm:w-8 sm:h-8 rounded-full bg-yellow-400 border-2 border-transparent shadow-sm scale-100 transition-all"></button>
+                            </div>
+                            <div class="flex gap-3 sm:gap-4 items-center pl-2">
+                                <button id="thick-1" onclick="setSketchThickness(1.5, 1)" class="w-4 h-4 bg-gray-400 rounded-full hover:bg-gray-600 transition-all shadow-none"></button>
+                                <button id="thick-2" onclick="setSketchThickness(3.0, 2)" class="w-6 h-6 bg-blue-600 rounded-full shadow-md transition-all"></button>
+                                <button id="thick-3" onclick="setSketchThickness(6.0, 3)" class="w-8 h-8 bg-gray-400 rounded-full hover:bg-gray-600 transition-all shadow-none"></button>
+                            </div>
+                        </div>
+                    </div>
+                ` : ''}
+            `;
+        }
+
+        function buildSpotHTML() {
+            return `
+                <div class="p-4 md:p-8 bg-white rounded-b-2xl rounded-tr-2xl shadow-lg border border-gray-100 space-y-6 animate-fadeIn">
+                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-gray-50 p-4 rounded-xl border border-gray-200/80 gap-3">
+                        <div class="space-y-0.5">
+                            <h3 class="text-xs font-bold text-gray-600 uppercase tracking-wider">Live System Price Engine Metrics</h3>
+                            <p class="text-[11px] text-gray-400 font-medium">Last Confirmed Feed Query Session: <span class="font-bold">${state.lastUpdated}</span></p>
+                        </div>
+                        <button onclick="fetchLivePrices()" class="text-xs bg-blue-600 text-white px-4 py-2 rounded-xl font-bold hover:bg-blue-700 shadow-sm transition-all">Execute Core Synced Feed Update (${state.syncStatus})</button>
+                    </div>
+
+                    <div class="space-y-2">
+                        <h3 class="text-[10px] font-bold text-gray-400 uppercase tracking-widest pl-1">Modify Raw Feed Anchors (per Ounce)</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            ${['gold', 'silver', 'platinum'].map(m => `
+                                <div class="bg-gray-50 p-3 rounded-xl border border-gray-200 shadow-sm">
+                                    <label class="text-[10px] font-bold text-gray-400 uppercase block mb-1">${m.toUpperCase()}</label>
+                                    <input type="number" class="w-full p-2 border rounded-lg font-bold bg-white text-sm" value="${state.spotPrices[m]}" oninput="state.spotPrices.${m}=Number(this.value); updateScrapUI(); updateSpotUI();" />
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-5 pt-4">
+                        <div class="border border-gray-100 bg-gray-50/30 rounded-2xl p-4 flex flex-col">
+                            <h4 class="font-black text-amber-600 border-b pb-1.5 mb-2 uppercase tracking-wider text-[11px]">Gold Matrix Breakdown</h4>
+                            <div id="spot-gold-matrix" class="flex-1 max-h-72 overflow-y-auto space-y-1.5 text-xs pr-1"></div>
+                        </div>
+
+                        <div class="border border-gray-100 bg-gray-50/30 rounded-2xl p-4 flex flex-col">
+                            <h4 class="font-black text-gray-500 border-b pb-1.5 mb-2 uppercase tracking-wider text-[11px]">Silver Matrix Purity Rows</h4>
+                            <div id="spot-silver-matrix" class="space-y-2 text-xs"></div>
+                        </div>
+
+                        <div class="border border-gray-100 bg-gray-50/30 rounded-2xl p-4 flex flex-col">
+                            <h4 class="font-black text-blue-500 border-b pb-1.5 mb-2 uppercase tracking-wider text-[11px]">Platinum Matrix Arrays</h4>
+                            <div id="spot-plat-matrix" class="space-y-2 text-xs"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-4 bg-gray-900 text-white p-5 rounded-2xl shadow-xl border border-gray-800">
+                        <h3 class="text-xs font-bold text-gray-400 uppercase tracking-widest border-b border-gray-800 pb-2 mb-4">Quick Raw Metal Calculator</h3>
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 items-end text-xs">
+                            <div>
+                                <label class="text-[10px] text-gray-400 font-bold block mb-1">Select Metal Purity</label>
+                                <select class="w-full p-2.5 rounded-xl font-bold bg-gray-800 text-white border border-gray-700 focus:ring-2 focus:ring-gray-600" onchange="state.quickCalcPurity=this.value; updateSpotUI()">
+                                    <option value="gold_10" ${state.quickCalcPurity==='gold_10'?'selected':''}>10k Gold</option>
+                                    <option value="gold_14" ${state.quickCalcPurity==='gold_14'?'selected':''}>14k Gold</option>
+                                    <option value="gold_18" ${state.quickCalcPurity==='gold_18'?'selected':''}>18k Gold</option>
+                                    <option value="gold_19" ${state.quickCalcPurity==='gold_19'?'selected':''}>19k Gold</option>
+                                    <option value="gold_22" ${state.quickCalcPurity==='gold_22'?'selected':''}>22k Gold</option>
+                                    <option value="gold_24" ${state.quickCalcPurity==='gold_24'?'selected':''}>24k Gold</option>
+                                    <option value="silver_925" ${state.quickCalcPurity==='silver_925'?'selected':''}>.925 Silver</option>
+                                    <option value="silver_999" ${state.quickCalcPurity==='silver_999'?'selected':''}>.999 Silver</option>
+                                    <option value="platinum_950" ${state.quickCalcPurity==='platinum_950'?'selected':''}>.950 Platinum</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="text-[10px] text-gray-400 font-bold block mb-1">Input Grams</label>
+                                <input type="number" class="w-full p-2.5 rounded-xl font-bold bg-gray-800 text-white border border-gray-700 shadow-inner" placeholder="0.00" value="${state.quickCalcGrams}" oninput="state.quickCalcGrams=this.value; updateSpotUI()" />
+                            </div>
+                            <div class="bg-green-900/30 p-2.5 rounded-xl border border-green-800 text-center">
+                                <span class="text-[10px] text-green-400 uppercase block mb-0.5">Total Raw Cost</span>
+                                <span id="spot-quick-total" class="text-xl font-black text-green-400">$${calculateQuickRawCost()}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                ${(setTimeout(updateSpotUI, 0), '')}
+            `;
+        }
+
+        function buildSettingsHTML() {
+            return `
+                <div class="p-6 md:p-8 bg-white rounded-b-2xl rounded-tr-2xl shadow-lg border border-gray-100 space-y-6 animate-fadeIn">
+                    <div class="flex justify-between items-center border-b pb-4">
+                        <h2 class="text-xl font-black text-gray-800">Operational Default Pricing Profiles</h2>
+                        <button id="save-settings-btn" onclick="saveSystemSettings()" class="bg-blue-600 text-white font-bold py-2.5 px-6 rounded-xl hover:bg-blue-700 shadow-sm text-xs md:text-sm transition-all">Save Default Settings</button>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="bg-gray-50 p-5 rounded-2xl border border-gray-200 space-y-4">
+                            <h3 class="text-xs font-bold text-gray-700 uppercase tracking-widest border-b pb-2">Consumer Stone Markups (per Ct)</h3>
+                            <div class="grid grid-cols-2 gap-4">
+                                <div><label class="text-[10px] font-bold text-gray-400 block mb-1">Standard Melee</label><input type="number" class="border p-2 rounded-xl w-full font-bold bg-white shadow-sm" value="${state.quote.meleePricePerCt}" oninput="state.quote.meleePricePerCt=Number(this.value); saveSystemSettings();" /></div>
+                                <div><label class="text-[10px] font-bold text-gray-400 block mb-1">Fancy Shaped</label><input type="number" class="border p-2 rounded-xl w-full font-bold bg-white shadow-sm" value="${state.quote.fancyPricePerCt}" oninput="state.quote.fancyPricePerCt=Number(this.value); saveSystemSettings();" /></div>
+                            </div>
+                            <div class="pt-2 space-y-2">
+                                <h4 class="text-[10px] font-bold text-gray-400 uppercase">Center Stone Retails</h4>
+                                <div class="grid grid-cols-3 gap-2">
+                                    <div><label class="text-[9px] text-gray-400 block">1-2ct</label><input type="number" class="border p-1.5 rounded-lg w-full text-xs font-bold bg-white" value="${state.quote.centerStones?.tier1?.price || ''}" oninput="state.quote.centerStones.tier1={price:Number(this.value)}; saveSystemSettings();" /></div>
+                                    <div><label class="text-[9px] text-gray-400 block">2-3ct</label><input type="number" class="border p-1.5 rounded-lg w-full text-xs font-bold bg-white" value="${state.quote.centerStones?.tier2?.price || ''}" oninput="state.quote.centerStones.tier2={price:Number(this.value)}; saveSystemSettings();" /></div>
+                                    <div><label class="text-[9px] text-gray-400 block">3-5ct</label><input type="number" class="border p-1.5 rounded-lg w-full text-xs font-bold bg-white" value="${state.quote.centerStones?.tier3?.price || ''}" oninput="state.quote.centerStones.tier3={price:Number(this.value)}; saveSystemSettings();" /></div>
+                                </div>
+                            </div>
+                            
+                            <div class="pt-4 border-t border-gray-200 space-y-2">
+                                <h3 class="text-xs font-bold text-gray-700 uppercase tracking-widest">Internal Core Wholesale Cost Rates</h3>
+                                <div class="grid grid-cols-3 gap-2">
+                                    <div><label class="text-[9px] text-gray-400 block">Melee (/ct)</label><input type="number" class="border p-1.5 rounded-lg w-full text-xs font-bold bg-white" value="${state.quote.rawCostRates.melee}" oninput="state.quote.rawCostRates.melee=Number(this.value); saveSystemSettings();" /></div>
+                                    <div><label class="text-[9px] text-gray-400 block">Fancy (/ct)</label><input type="number" class="border p-1.5 rounded-lg w-full text-xs font-bold bg-white" value="${state.quote.rawCostRates.fancy}" oninput="state.quote.rawCostRates.fancy=Number(this.value); saveSystemSettings();" /></div>
+                                    <div><label class="text-[9px] text-gray-400 block">Center (/ct)</label><input type="number" class="border p-1.5 rounded-lg w-full text-xs font-bold bg-white" value="${state.quote.rawCostRates.center}" oninput="state.quote.rawCostRates.center=Number(this.value); saveSystemSettings();" /></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="bg-blue-50/30 p-5 rounded-2xl border border-blue-100 space-y-4">
+                            <h3 class="text-xs font-bold text-blue-800 uppercase tracking-widest border-b pb-2">Ring Metal Rates (per Gram)</h3>
+                            <div class="grid grid-cols-2 md:grid-cols-3 gap-3">
+                                ${[10, 14, 18, 19, 22].map(k => `
+                                    <div>
+                                        <label class="text-[9px] font-bold text-gray-500 block mb-0.5">${k}k Gold</label>
+                                        <input type="number" class="border p-2 rounded-xl w-full text-xs font-bold bg-white" value="${state.quote.goldPricesPerGram[k] || ''}" oninput="state.quote.goldPricesPerGram[${k}]=Number(this.value); saveSystemSettings();" />
+                                    </div>
+                                `).join('')}
+                            </div>
+                            <div class="grid grid-cols-2 gap-4 pt-3 border-t border-blue-200">
+                                <div><label class="text-[10px] font-bold text-gray-500 block mb-0.5">Platinum</label><input type="number" class="border p-2 rounded-xl w-full text-xs font-bold bg-white" value="${state.quote.platinumPricePerGram}" oninput="state.quote.platinumPricePerGram=Number(this.value); saveSystemSettings();" /></div>
+                                <div><label class="text-[10px] font-bold text-gray-500 block mb-0.5">Silver Base</label><input type="number" class="border p-2 rounded-xl w-full text-xs font-bold bg-white" value="${state.quote.silverPricePerGram}" oninput="state.quote.silverPricePerGram=Number(this.value); saveSystemSettings();" /></div>
+                            </div>
+                        </div>
+                        
+                        <div class="bg-red-50/30 p-5 rounded-2xl border border-red-100 space-y-4 md:col-span-2 mt-4">
+                            <h3 class="text-xs font-bold text-red-800 uppercase tracking-widest border-b border-red-200 pb-2">Data Operations & Ledger Management</h3>
+                            <div class="flex flex-col md:flex-row gap-4 items-end">
+                                <div class="flex-1 w-full space-y-2">
+                                    <button onclick="exportCSV('scrap')" class="w-full bg-white border border-red-200 text-red-700 font-bold py-2 rounded-xl hover:bg-red-50 transition-all text-[10px] uppercase shadow-sm">⬇️ Export Scrap (.csv)</button>
+                                    <button onclick="exportCSV('quote')" class="w-full bg-white border border-red-200 text-red-700 font-bold py-2 rounded-xl hover:bg-red-50 transition-all text-[10px] uppercase shadow-sm">⬇️ Export Quotes (.csv)</button>
+                                </div>
+                                <div class="flex-1 w-full space-y-1">
+                                    <label class="text-[10px] font-bold text-red-400 uppercase pl-1">Target Deletion Scope</label>
+                                    <select id="clear-history-range" class="border border-red-200 p-2.5 rounded-xl w-full text-xs font-bold bg-white text-gray-700 focus:ring-2 focus:ring-red-200">
+                                        <option value="365">Purge Records > 365 Days Old</option>
+                                        <option value="custom">Specific Range (Requires Dates Below)</option>
+                                        <option value="all">Wipe All Historical Databases</option>
+                                    </select>
+                                </div>
+                                <div class="flex-1 w-full space-y-1">
+                                    <label class="text-[10px] font-bold text-red-400 uppercase pl-1">Target Start</label>
+                                    <input type="date" id="clear-start-date" class="border border-red-200 p-2.5 rounded-xl w-full text-xs font-bold bg-white text-gray-700" />
+                                </div>
+                                <div class="flex-1 w-full space-y-1">
+                                    <label class="text-[10px] font-bold text-red-400 uppercase pl-1">Target End</label>
+                                    <input type="date" id="clear-end-date" class="border border-red-200 p-2.5 rounded-xl w-full text-xs font-bold bg-white text-gray-700" />
+                                </div>
+                                <div class="flex-1 w-full">
+                                    <button onclick="clearHistory()" class="w-full bg-red-600 text-white font-bold py-2.5 px-4 rounded-xl hover:bg-red-700 shadow-sm transition-all text-xs">🗑️ Execute Purge</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function buildLedgerHTML() {
+            return `
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 animate-fadeIn text-xs">
+                    <div class="p-5 bg-white rounded-2xl shadow-md border border-gray-100">
+                        <h2 class="text-sm font-black mb-4 text-gray-800 uppercase tracking-wider border-b pb-2">Scrap Payout History Ledger</h2>
+                        ${state.scrapTransactions.length === 0 ? '<p class="text-center text-gray-400 py-12">No purchases filed for current lifecycle.</p>' : `
+                            <div class="space-y-3 max-h-[450px] overflow-y-auto pr-1">
+                                ${state.scrapTransactions.map((t, idx) => `
+                                    <div onclick="showScrapDetails(${idx})" class="p-3 bg-gray-50 rounded-xl border flex justify-between items-center shadow-sm cursor-pointer hover:bg-green-50 transition-colors">
+                                        <div class="space-y-1"><p class="font-bold text-gray-800">${t.name}</p><p class="text-[10px] text-gray-400">${t.date} • ${t.summary}</p></div>
+                                        <span class="font-black text-green-600 text-sm">$${t.total}</span>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        `}
+                    </div>
+
+                    <div class="p-5 bg-white rounded-2xl shadow-md border border-gray-100">
+                        <h2 class="text-sm font-black mb-4 text-gray-800 uppercase tracking-wider border-b pb-2">Ring Consultation Quotation Ledger</h2>
+                        ${state.ringQuoteTransactions.length === 0 ? '<p class="text-center text-gray-400 py-12">No retail ring layouts profiled yet.</p>' : `
+                            <div class="space-y-3 max-h-[450px] overflow-y-auto pr-1">
+                                ${state.ringQuoteTransactions.map((q, idx) => `
+                                    <div onclick="showQuoteDetails(${idx})" class="p-3 bg-gray-50 rounded-xl border flex justify-between items-center shadow-sm cursor-pointer hover:bg-blue-50 transition-colors">
+                                        <div class="space-y-1"><p class="font-bold text-gray-800">${q.name}</p><p class="text-[10px] text-gray-400">${q.date} • ${q.summary}</p></div>
+                                        <span class="font-black text-blue-600 text-sm">${q.total}</span>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        `}
+                    </div>
+                </div>
+            `;
+        }
+
+        function buildBabyRingsHTML() {
+            return `
+                <div class="p-16 text-center bg-white rounded-b-2xl rounded-tr-2xl shadow-lg border border-dashed border-4 border-gray-200 animate-fadeIn">
+                     <h3 class="text-xl font-black text-gray-600">Baby Rings Module Workspace</h3>
+                     <p class="text-xs text-gray-400 mt-2 max-w-sm mx-auto">This architectural node is partitioned safely to prevent configuration collision parameters during future functional additions.</p>
+                </div>
+            `;
+        }
+
+        function render() {
+            try {
+                const app = document.getElementById('app');
+                app.innerHTML = `
+                    <div class="max-w-4xl mx-auto">
+                        <div class="text-center mb-8 pt-4">
+                            <h1 style="font-family: 'Playfair Display', serif;" class="text-5xl italic text-gray-900 tracking-wide">Gold and Rose</h1>
+                        </div>
+                        ${buildTabsHTML()}
+                        ${state.activeTab === 'calculator' ? buildScrapHTML() : ''}
+                        ${state.activeTab === 'quote' ? buildQuoteHTML() : ''}
+                        ${state.activeTab === 'spot_price' ? buildSpotHTML() : ''}
+                        ${state.activeTab === 'settings' ? buildSettingsHTML() : ''}
+                        ${state.activeTab === 'ledger' ? buildLedgerHTML() : ''}
+                        ${state.activeTab === 'baby_rings' ? buildBabyRingsHTML() : ''}
+                    </div>
+                    <div id="modal-backdrop" class="fixed inset-0 bg-black/50 hidden flex items-center justify-center p-4 z-50">
+                        <div id="modal-content" class="bg-white rounded-2xl p-8 max-w-lg w-full shadow-2xl overflow-y-auto max-h-[90vh]"></div>
+                    </div>
+                `;
+                if (state.activeTab === 'quote' || state.activeTab === 'settings') {
+                    updateQuoteTotals();
+                }
+            } catch (e) {
+                console.error("Critical Render Failure:", e);
+                document.getElementById('app').innerHTML = `<div class="p-10 text-center text-red-500 font-bold">A critical rendering error occurred. Please clear your browser cache and refresh.</div>`;
+            }
+        }
+
+        window.onload = () => { 
+            loadStorageData(); 
+            render(); 
+        };
+    </script>
+</body>
+</html>
