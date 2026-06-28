@@ -55,7 +55,7 @@
                 <div class="p-8 mt-10 max-w-md mx-auto bg-white rounded-3xl shadow-2xl border border-red-200 text-center animate-fadeIn">
                     <div class="text-red-500 text-6xl mb-4">⚠️</div>
                     <h2 class="text-2xl font-black text-brand-900 mb-2">System Error Caught</h2>
-                    <p class="text-sm text-brand-500 mb-6">The dashboard encountered an error. If this persists, use the reset button below.</p>
+                    <p class="text-sm text-brand-500 mb-6">The dashboard encountered an error reading outdated local files.</p>
                     <div class="bg-gray-100 p-3 rounded-xl text-left text-xs font-mono text-gray-500 mb-6 overflow-hidden">${message}<br>Line: ${lineno}</div>
                     <button onclick="localStorage.clear(); window.location.reload();" class="w-full bg-red-600 text-white font-black uppercase tracking-widest text-sm py-4 rounded-xl hover:bg-red-700 shadow-md">Wipe Data & Factory Reset</button>
                 </div>
@@ -106,15 +106,24 @@
             transform: `<svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><path d="M21 15v2a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-2"></path><path d="M21 9V7a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v2"></path></svg>`,
             camera: `<svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>`,
             scale: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 3 21 3 21 9"></polyline><polyline points="9 21 3 21 3 15"></polyline><line x1="21" y1="3" x2="14" y2="10"></line><line x1="3" y1="21" x2="10" y2="14"></line></svg>`,
-            rotate: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.59-9.28l5.67-5.67"/></svg>`
+            rotate: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.59-9.28l5.67-5.67"/></svg>`,
+            trash: `<svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>`
         };
 
+        // Generating Unique IDs for Rings
+        function genId() { return Math.random().toString(36).substr(2, 9); }
+
+        function getEmptyRing(category) {
+            const base = { id: genId(), category: category, material: 'gold', goldKarat: 14, fancyShape: 'Princess', fancySizeIdx: 0, fancyQty: '', melee: [{ size: '1.3', carat: ROUND_MELEE['1.3'], qty: '' }], customAddon: '' };
+            if (category === 'mensBand') return { ...base, mbSize: '', mbWidth: '', mbThickness: '', goldGrams: '' };
+            return { ...base, goldGrams: '', cRingSize: '', cBandWidth: '', cBandThickness: '', centerStone: { carats: '', shape: 'Round' } };
+        }
+
         function getEmptyQuoteSession() {
+            const firstRing = getEmptyRing('customRing');
             return {
-                cName: '', cPhone: '', taxGST: false, taxPST: false, notes: '', activeSubTab: 'customRing',
-                customRing: { goldGrams: '', material: 'gold', goldKarat: 14, cRingSize: '', cBandWidth: '', cBandThickness: '', centerStone: { carats: '', shape: 'Round' }, fancyShape: 'Princess', fancySizeIdx: 0, fancyQty: '', melee: [{ size: '1.3', carat: 0.010, qty: '' }], customAddon: '' },
-                weddingBand: { goldGrams: '', material: 'gold', goldKarat: 14, cRingSize: '', cBandWidth: '', cBandThickness: '', fancyShape: 'Princess', fancySizeIdx: 0, fancyQty: '', melee: [{ size: '1.3', carat: 0.010, qty: '' }], customAddon: '' },
-                mensBand: { mbSize: '', mbWidth: '', mbThickness: '', material: 'gold', goldKarat: 14, goldGrams: '', fancyShape: 'Princess', fancySizeIdx: 0, fancyQty: '', melee: [{ size: '1.3', carat: 0.010, qty: '' }], customAddon: '' }
+                id: genId(), cName: '', cPhone: '', taxGST: false, taxPST: false, notes: '',
+                activeSubTab: firstRing.id, rings: [firstRing]
             };
         }
 
@@ -125,7 +134,7 @@
             scrapItems: [{ weight: '', material: 'gold', purity: 14, rate: 85 }], scrapImage: null,
             scrapTransactions: [], 
             ringQuoteTransactions: [], 
-            lastUpdated: 'Manual Input', syncStatus: 'Idle', isEditingNotes: false,
+            lastUpdated: 'Manual Input', syncStatus: null, isEditingNotes: false,
             scrapNotes: "• 24k gold bullion (coins/bars) is typically purchased at 95% (5% margin).\n• Treat all calculations as confidential store reference data.",
             quickCalcPurity: 'gold_14', quickCalcGrams: '',
             
@@ -133,6 +142,13 @@
             settings: { meleePricePerCt: 2400, fancyPricePerCt: 700, goldPricesPerGram: { 10: 200, 14: 233, 18: 280, 19: 290, 22: 320 }, platinumPricePerGram: 380, silverPricePerGram: 100, centerStones: { tier1: {price:1300}, tier2: {price:1200}, tier3: {price:1000} }, rawCostRates: { melee: 300, fancy: 380, center: 400 } },
             quoteSession: getEmptyQuoteSession()
         };
+
+        // --- GLOBAL NOTE TOGGLE FIX ---
+        function toggleScrapNotes() {
+            state.isEditingNotes = !state.isEditingNotes;
+            if (!state.isEditingNotes) localStorage.setItem('gr_scrap_notes', state.scrapNotes);
+            render();
+        }
 
         // --- SKETCHPAD ENGINE (PRO TRANSFORM) ---
         let sketchCtx; let isDrawing = false; let bgImageObj = null;
@@ -302,7 +318,7 @@
 
         function closeSketcher() { state.isSketching = false; render(); }
 
-        // --- AUTO-HEALING INITIALIZATION & DATA SYNC ---
+        // --- INITIALIZATION & DATA SYNC ---
         function loadStorageData() {
             try {
                 const st = safeJSONParse('gr_scrap_ledger', []); 
@@ -326,12 +342,8 @@
                         state.settings.centerStones.tier2 = lsSettings.centerStones.tier2 || { price: 1200 };
                         state.settings.centerStones.tier3 = lsSettings.centerStones.tier3 || { price: 1000 };
                     }
-                } else {
-                    state.settings.centerStones = { tier1: {price:1300}, tier2: {price:1200}, tier3: {price:1000} };
                 }
-            } catch (e) {
-                console.warn("Recovered from deep memory corruption during load.", e);
-            }
+            } catch (e) { console.warn("Memory issue averted."); }
             state.scrapNotes = localStorage.getItem('gr_scrap_notes') || state.scrapNotes;
         }
 
@@ -339,8 +351,8 @@
             localStorage.setItem('gr_master_settings', JSON.stringify(state.settings));
             const btn = document.getElementById('save-settings-btn');
             if (btn) {
-                btn.innerText = "Settings Auto-Saved!"; btn.className = "bg-green-600 text-white font-bold py-2.5 px-6 rounded-xl shadow-md transition-all text-xs md:text-sm";
-                setTimeout(() => { btn.innerText = "Save Default Settings"; btn.className = "bg-brand-800 text-brand-gold font-bold py-2.5 px-6 rounded-xl hover:bg-brand-900 shadow-sm transition-all text-xs md:text-sm"; }, 2000);
+                btn.innerText = "Settings Auto-Saved!"; btn.className = "bg-green-600 text-white font-bold py-2.5 px-6 rounded-xl shadow-md transition-all text-xs md:text-sm uppercase tracking-wider";
+                setTimeout(() => { btn.innerText = "Save Default Settings"; btn.className = "bg-brand-800 text-brand-gold font-bold py-2.5 px-6 rounded-xl hover:bg-brand-900 shadow-md transition-all text-xs md:text-sm uppercase tracking-wider"; }, 2000);
             }
         }
 
@@ -364,13 +376,15 @@
 
         async function fetchLivePrices() {
             if (GOLD_API_KEY.includes('INSERT')) return alert("Please map your live GoldAPI token key profile inside the source parameters.");
-            state.syncStatus = 'Fetching...'; updateSpotUI(); 
+            state.syncStatus = "Fetching..."; updateSpotUI(); 
             try {
                 const headers = { 'x-access-token': GOLD_API_KEY, 'Content-Type': 'application/json' };
                 const responses = await Promise.all(['XAU', 'XAG', 'XPT'].map(m => fetch(`https://www.goldapi.io/api/${m}/CAD`, { headers }).then(res => res.json())));
                 state.spotPrices.gold = responses[0].price; state.spotPrices.silver = responses[1].price; state.spotPrices.platinum = responses[2].price;
-                state.lastUpdated = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }); state.syncStatus = 'Synced';
+                state.lastUpdated = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }); 
+                state.syncStatus = `Synced (${state.lastUpdated})`;
                 if(state.activeTab === 'calculator') updateScrapUI(); if(state.activeTab === 'spot_price') updateSpotUI();
+                render();
             } catch (error) { state.syncStatus = 'Failed'; if(state.activeTab === 'spot_price') updateSpotUI(); alert("Network error: " + error.message); }
         }
 
@@ -432,29 +446,42 @@
         }
 
         // --- BRIDAL STACK QUOTE ENGINE ---
-        function hasRingData(type, dataSource) {
-            const r = dataSource ? dataSource[type] : state.quoteSession[type]; if(!r) return false;
-            const grams = Number(r.goldGrams) || 0; 
-            const center = type==='customRing' ? (Number(r.centerStone?.carats) || 0) : 0;
-            const fancy = Number(r.fancyQty) || 0; 
-            const melee = (r.melee || []).reduce((sum, m) => sum + (Number(m?.qty) || 0), 0);
-            const addon = Number(r.customAddon) || 0;
-            return (grams > 0 || center > 0 || fancy > 0 || melee > 0 || addon > 0);
+        function addNewRing(category) {
+            const r = getEmptyRing(category);
+            if(!state.quoteSession.rings) state.quoteSession.rings = [];
+            state.quoteSession.rings.push(r);
+            state.quoteSession.activeSubTab = r.id;
+            document.getElementById('add-ring-modal').classList.add('hidden');
+            updateQuoteTotals();
+            render();
         }
 
-        function updateMeleeSize(type, idx, val) { 
-            state.quoteSession[type].melee[idx].size = val; 
-            state.quoteSession[type].melee[idx].carat = ROUND_MELEE[val]; 
-            const el = document.getElementById(`melee-carat-${type}-${idx}`);
+        function removeRing(id) {
+            if(confirm("Remove this ring from the consultation?")) {
+                state.quoteSession.rings = state.quoteSession.rings.filter(r => r.id !== id);
+                if(state.quoteSession.rings.length > 0) {
+                    state.quoteSession.activeSubTab = state.quoteSession.rings[0].id;
+                } else {
+                    state.quoteSession.activeSubTab = 'summary';
+                }
+                updateQuoteTotals();
+                render();
+            }
+        }
+
+        function updateMeleeSize(ringIdx, meleeIdx, val) { 
+            state.quoteSession.rings[ringIdx].melee[meleeIdx].size = val; 
+            state.quoteSession.rings[ringIdx].melee[meleeIdx].carat = ROUND_MELEE[val]; 
+            const el = document.getElementById(`melee-carat-${ringIdx}-${meleeIdx}`);
             if(el) el.innerText = ROUND_MELEE[val].toFixed(3);
             updateQuoteTotals(); 
         }
-        function updateMeleeQty(type, idx, val) { state.quoteSession[type].melee[idx].qty = val; updateQuoteTotals(); }
-        function addMeleeRow(type) { state.quoteSession[type].melee.push({ size: '1.3', carat: ROUND_MELEE['1.3'], qty: '' }); render(); }
-        function removeMeleeRow(type, idx) { state.quoteSession[type].melee.splice(idx, 1); render(); setTimeout(updateQuoteTotals, 0); }
+        function updateMeleeQty(ringIdx, meleeIdx, val) { state.quoteSession.rings[ringIdx].melee[meleeIdx].qty = val; updateQuoteTotals(); }
+        function addMeleeRow(ringIdx) { state.quoteSession.rings[ringIdx].melee.push({ size: '1.3', carat: ROUND_MELEE['1.3'], qty: '' }); render(); }
+        function removeMeleeRow(ringIdx, meleeIdx) { state.quoteSession.rings[ringIdx].melee.splice(meleeIdx, 1); render(); setTimeout(updateQuoteTotals, 0); }
 
-        function calculateSpecificRingCost(type) {
-            const r = state.quoteSession[type]; if(!r) return 0;
+        function calculateRingCost(r) {
+            if(!r) return 0;
             let totalMeleeCts = 0; (r.melee || []).forEach(m => { if(m) totalMeleeCts += (Number(m.qty) || 0) * m.carat; });
             const standardRetailMeleeCost = totalMeleeCts * (state.settings.meleePricePerCt || 2400);
 
@@ -468,7 +495,7 @@
             else if (r.material === 'silver') retailMaterialCost = grams * (state.settings.silverPricePerGram || 0);
 
             let retailCenterCost = 0;
-            if (type === 'customRing') {
+            if (r.category === 'customRing') {
                 const centerCarats = Number(r.centerStone?.carats) || 0;
                 let centerMultiplier = state.settings.rawCostRates?.center || 400; 
                 if (centerCarats > 0 && centerCarats < 2.0) centerMultiplier = state.settings.centerStones?.tier1?.price || 1300; 
@@ -480,44 +507,41 @@
         }
 
         function updateQuoteTotals() {
-            if(!state.quoteSession) return;
+            if(!state.quoteSession || !state.quoteSession.rings) return;
             let grandTotal = 0;
 
-            const mb = state.quoteSession.mensBand || {};
-            const mbSz = Number(mb.mbSize) || 0; const mbW = Number(mb.mbWidth) || 0; const mbT = Number(mb.mbThickness) || 0;
-            if (mbSz && mbW && mbT) {
-                const diameter = 11.63 + (0.8128 * mbSz);
-                const vol_cm3 = (mbW * mbT * Math.PI * (diameter + mbT)) / 1000;
-                let density = 13.1;
-                if (mb.material === 'gold') density = DENSITIES.gold[mb.goldKarat] || 13.1;
-                else if (mb.material === 'platinum') density = DENSITIES.platinum;
-                else if (mb.material === 'silver') density = DENSITIES.silver;
-                mb.goldGrams = (vol_cm3 * density).toFixed(2);
-            } else if (mb.goldGrams !== undefined) { mb.goldGrams = ''; }
+            state.quoteSession.rings.forEach((r, ringIdx) => {
+                if(r.category === 'mensBand') {
+                    const mbSz = Number(r.mbSize) || 0; const mbW = Number(r.mbWidth) || 0; const mbT = Number(r.mbThickness) || 0;
+                    if (mbSz && mbW && mbT) {
+                        const diameter = 11.63 + (0.8128 * mbSz); const vol_cm3 = (mbW * mbT * Math.PI * (diameter + mbT)) / 1000;
+                        let density = 13.1;
+                        if (r.material === 'gold') density = DENSITIES.gold[r.goldKarat] || 13.1;
+                        else if (r.material === 'platinum') density = DENSITIES.platinum;
+                        else if (r.material === 'silver') density = DENSITIES.silver;
+                        r.goldGrams = (vol_cm3 * density).toFixed(2);
+                    } else { r.goldGrams = ''; }
+                    const mbWeightDisplay = document.getElementById(`mb-calc-weight-${r.id}`);
+                    if (mbWeightDisplay) mbWeightDisplay.innerText = r.goldGrams ? r.goldGrams + 'g' : '0.00g';
+                }
 
-            const mbWeightDisplay = document.getElementById('mb-calculated-weight');
-            if (mbWeightDisplay) mbWeightDisplay.innerText = mb.goldGrams ? mb.goldGrams + 'g' : '0.00g';
-
-            ['customRing', 'weddingBand', 'mensBand'].forEach(type => {
-                let r = state.quoteSession[type]; if(!r) return;
                 let totalMeleeCts = 0;
-                
-                (r.melee || []).forEach((m, idx) => {
+                (r.melee || []).forEach((m, meleeIdx) => {
                     if(!m) return;
                     const c = (Number(m.qty) || 0) * m.carat; totalMeleeCts += c;
-                    const el = document.getElementById(`quote-melee-row-${type}-${idx}`); if (el) el.innerText = c.toFixed(3);
+                    const el = document.getElementById(`quote-melee-row-${ringIdx}-${meleeIdx}`); if (el) el.innerText = c.toFixed(3);
                 });
 
                 const shapeArr = FANCY_SHAPES[r.fancyShape] || FANCY_SHAPES['Princess'];
                 const fancyCts = (Number(r.fancyQty) || 0) * (shapeArr[r.fancySizeIdx] || shapeArr[0]).carat;
                 
-                const elFancySub = document.getElementById(`quote-fancy-row-total-${type}`); if (elFancySub) elFancySub.innerText = fancyCts.toFixed(3);
-                const elMeleeCts = document.getElementById(`quote-total-melee-cts-${type}`); if (elMeleeCts) elMeleeCts.innerText = (totalMeleeCts + fancyCts).toFixed(3);
+                const elFancySub = document.getElementById(`quote-fancy-row-total-${r.id}`); if (elFancySub) elFancySub.innerText = fancyCts.toFixed(3);
+                const elMeleeCts = document.getElementById(`quote-total-melee-cts-${r.id}`); if (elMeleeCts) elMeleeCts.innerText = (totalMeleeCts + fancyCts).toFixed(3);
 
-                const ringCost = calculateSpecificRingCost(type);
-                const elRingTotal = document.getElementById(`quote-ring-total-${type}`); if (elRingTotal) elRingTotal.innerText = `$${ringCost.toFixed(2)}`;
+                const ringCost = calculateRingCost(r);
+                const elRingTotal = document.getElementById(`quote-ring-total-${r.id}`); if (elRingTotal) elRingTotal.innerText = `$${ringCost.toFixed(2)}`;
 
-                if (hasRingData(type)) grandTotal += ringCost;
+                grandTotal += ringCost;
             });
 
             let taxMultiplier = 1.0;
@@ -534,26 +558,44 @@
             const total = document.getElementById('quote-final-total')?.innerText || '$0.00';
             
             let summaryParts = [];
-            if (hasRingData('customRing')) summaryParts.push(`Eng: ${state.quoteSession.customRing.goldGrams}g`);
-            if (hasRingData('weddingBand')) summaryParts.push(`Wed: ${state.quoteSession.weddingBand.goldGrams}g`);
-            if (hasRingData('mensBand')) summaryParts.push(`Men: ${state.quoteSession.mensBand.goldGrams}g`);
-            
+            (state.quoteSession.rings || []).forEach(r => {
+                if(r.category === 'customRing') summaryParts.push(`Eng: ${r.goldGrams}g`);
+                if(r.category === 'weddingBand') summaryParts.push(`Wed: ${r.goldGrams}g`);
+                if(r.category === 'mensBand') summaryParts.push(`Men: ${r.goldGrams}g`);
+            });
             const itemSummary = summaryParts.join(' | ') || "Consultation Quote";
             const savedQuoteData = JSON.parse(JSON.stringify(state.quoteSession));
 
-            state.ringQuoteTransactions.unshift({
+            const quoteRecord = {
+                id: state.quoteSession.id,
                 date: new Date().toLocaleString(), name: state.quoteSession.cName, phone: state.quoteSession.cPhone,
                 summary: itemSummary, total: total, fullData: savedQuoteData, image: state.quoteImage
-            });
+            };
+
+            const existingIdx = state.ringQuoteTransactions.findIndex(q => q.id === state.quoteSession.id);
+            if(existingIdx >= 0) {
+                state.ringQuoteTransactions[existingIdx] = quoteRecord;
+            } else {
+                state.ringQuoteTransactions.unshift(quoteRecord);
+            }
             
             try {
                 localStorage.setItem('gr_quote_ledger', JSON.stringify(state.ringQuoteTransactions));
                 state.quoteSession = getEmptyQuoteSession(); state.quoteImage = null; bgImageObj = null;
-                render(); alert("Client Consultation saved to ledger successfully.");
-            } catch (e) {
-                alert("Storage limit reached! Photos take up space. Please clear some old history to save new ones.");
-                state.ringQuoteTransactions.shift();
+                render(); alert("Client Consultation saved successfully.");
+            } catch (e) { alert("Storage limit reached! Please clear old history to save new ones."); }
+        }
+
+        function deleteLedgerItem(type, idx) {
+            if(!confirm("Are you sure you want to delete this record permanently?")) return;
+            if(type === 'scrap') {
+                state.scrapTransactions.splice(idx, 1);
+                localStorage.setItem('gr_scrap_ledger', JSON.stringify(state.scrapTransactions));
+            } else {
+                state.ringQuoteTransactions.splice(idx, 1);
+                localStorage.setItem('gr_quote_ledger', JSON.stringify(state.ringQuoteTransactions));
             }
+            render();
         }
 
         // --- DATA EXPORT & CLEARANCE MODULE ---
@@ -563,21 +605,10 @@
                 csv = "Date,Client,Phone,Summary,Total\n";
                 (state.scrapTransactions || []).forEach(t => { if(t) csv += `"${t.date || ''}","${t.name || ''}","${t.phone || ''}","${(t.summary||'').replace(/"/g, '""')}","${t.total || 0}"\n`; });
             } else {
-                csv = "Date,Client,Phone,Type,Metal Base,Centerstone,Final Price\n";
+                csv = "Date,Client,Phone,Total Price\n"; // Simplified for multi-ring exports
                 (state.ringQuoteTransactions || []).forEach(q => {
                     if(!q) return;
-                    const d = q.fullData || {}; let baseStr = ''; let centerStr = 'N/A';
-                    if (d.customRing || d.weddingBand || d.mensBand) { 
-                        const bR = hasRingData('customRing', d) ? `Eng: ${d.customRing.goldGrams}g ${d.customRing.material}` : '';
-                        const bW = hasRingData('weddingBand', d) ? `Wed: ${d.weddingBand.goldGrams}g ${d.weddingBand.material}` : '';
-                        const bM = hasRingData('mensBand', d) ? `Men: Sz ${d.mensBand.mbSize} | ${d.mensBand.goldGrams}g ${d.mensBand.material}` : '';
-                        baseStr = [bR, bW, bM].filter(Boolean).join(' | ');
-                        centerStr = hasRingData('customRing', d) ? `${d.customRing.centerStone?.carats || 0}ct ${d.customRing.centerStone?.shape || 'Round'}` : 'N/A';
-                    } else { 
-                        baseStr = d.type === 'mens_band' ? `Band Sz ${d.mbSize} | ${d.goldGrams}g ${d.material}` : `${d.goldGrams}g ${d.material}`;
-                        centerStr = d.type === 'mens_band' ? 'N/A' : `${d.centerStone?.carats || 0}ct ${d.centerStone?.shape || 'Round'}`;
-                    }
-                    csv += `"${q.date || ''}","${q.name || ''}","${q.phone || ''}","Multi-Ring Stack","${baseStr}","${centerStr}","${q.total || 0}"\n`;
+                    csv += `"${q.date || ''}","${q.name || ''}","${q.phone || ''}","${q.total || 0}"\n`;
                 });
             }
             const blob = new Blob([csv], { type: 'text/csv' }); const url = URL.createObjectURL(blob);
@@ -637,7 +668,10 @@
                     <div class="space-y-4">
                         <div class="flex justify-between items-center px-1">
                             <h3 class="text-xs font-bold text-brand-500 uppercase tracking-widest">Global Valuation Sync</h3>
-                            <button onclick="fetchLivePrices()" class="text-xs bg-brand-800 text-brand-gold px-4 py-1.5 rounded-xl font-bold hover:bg-brand-900 shadow-sm transition-all">Sync Market Rate (${state.syncStatus})</button>
+                            <div class="flex items-center gap-2">
+                                ${state.syncStatus ? `<span class="text-[10px] font-bold text-green-600 uppercase tracking-widest bg-green-50 px-2 py-1 rounded-md">✓ ${state.syncStatus}</span>` : ''}
+                                <button onclick="fetchLivePrices()" class="text-xs bg-brand-800 text-brand-gold px-4 py-1.5 rounded-xl font-bold hover:bg-brand-900 shadow-sm transition-all">Sync Market Rate</button>
+                            </div>
                         </div>
                         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                             ${['gold', 'silver', 'platinum'].map(m => `
@@ -720,7 +754,10 @@
                             <h3 class="text-xs font-bold text-brand-700 uppercase tracking-wider">Live System Price Engine Metrics</h3>
                             <p class="text-[11px] text-brand-500 font-medium">Last Confirmed Feed Query Session: <span class="font-bold text-brand-800">${state.lastUpdated}</span></p>
                         </div>
-                        <button onclick="fetchLivePrices()" class="text-xs bg-brand-800 text-brand-gold px-4 py-2 rounded-xl font-bold hover:bg-brand-900 shadow-md transition-all">Execute Core Synced Feed Update (${state.syncStatus})</button>
+                        <div class="flex items-center gap-2">
+                            ${state.syncStatus ? `<span class="text-[10px] font-bold text-green-600 uppercase tracking-widest bg-green-50 border border-green-200 px-2 py-1.5 rounded-md">✓ ${state.syncStatus}</span>` : ''}
+                            <button onclick="fetchLivePrices()" class="text-xs bg-brand-800 text-brand-gold px-4 py-2 rounded-xl font-bold hover:bg-brand-900 shadow-md transition-all">Sync Market Rate</button>
+                        </div>
                     </div>
 
                     <div class="space-y-2">
@@ -878,8 +915,9 @@
                                     if(!t) return '';
                                     return `
                                     <div onclick="showScrapDetails(${idx})" class="p-3 bg-brand-50 rounded-xl border border-brand-200 flex justify-between items-center shadow-sm cursor-pointer hover:bg-green-50 hover:border-green-200 transition-colors">
-                                        <div class="space-y-1"><p class="font-bold text-brand-900 text-sm">${t.name}</p><p class="text-[10px] text-brand-500 uppercase tracking-wide">${t.date} • ${t.summary}</p></div>
-                                        <span class="font-black text-green-600 text-sm">$${t.total}</span>
+                                        <div class="space-y-1 flex-1"><p class="font-bold text-brand-900 text-sm">${t.name}</p><p class="text-[10px] text-brand-500 uppercase tracking-wide">${t.date} • ${t.summary}</p></div>
+                                        <span class="font-black text-green-600 text-sm mr-3">$${t.total}</span>
+                                        <button onclick="deleteLedgerItem('scrap', ${idx}); event.stopPropagation();" class="text-red-400 hover:text-red-600 bg-white p-2 rounded-lg border border-brand-200 shadow-sm">${ICONS.trash}</button>
                                     </div>
                                 `}).join('')}
                             </div>
@@ -894,8 +932,9 @@
                                     if(!q) return '';
                                     return `
                                     <div onclick="showQuoteDetails(${idx})" class="p-3 bg-brand-50 rounded-xl border border-brand-200 flex justify-between items-center shadow-sm cursor-pointer hover:bg-brand-100 transition-colors">
-                                        <div class="space-y-1"><p class="font-bold text-brand-900 text-sm">${q.name}</p><p class="text-[10px] text-brand-500 uppercase tracking-wide">${q.date} • ${q.summary}</p></div>
-                                        <span class="font-black text-brand-800 text-sm">${q.total}</span>
+                                        <div class="space-y-1 flex-1"><p class="font-bold text-brand-900 text-sm">${q.name}</p><p class="text-[10px] text-brand-500 uppercase tracking-wide">${q.date} • ${q.summary}</p></div>
+                                        <span class="font-black text-brand-800 text-sm mr-3">${q.total}</span>
+                                        <button onclick="deleteLedgerItem('quote', ${idx}); event.stopPropagation();" class="text-red-400 hover:text-red-600 bg-white p-2 rounded-lg border border-brand-200 shadow-sm">${ICONS.trash}</button>
                                     </div>
                                 `}).join('')}
                             </div>
@@ -914,30 +953,33 @@
             `;
         }
 
-        function buildRingHTML(type) {
-            const r = state.quoteSession[type]; if(!r) return '';
+        function buildRingHTML(ringId) {
+            const ringIdx = state.quoteSession.rings.findIndex(r => r.id === ringId);
+            if(ringIdx === -1) return '';
+            const r = state.quoteSession.rings[ringIdx];
+            const type = r.category;
             const shapeOpts = Object.keys(FANCY_SHAPES);
             const activeShapeArray = FANCY_SHAPES[r.fancyShape] || FANCY_SHAPES['Princess'];
 
             const cadBlock = type === 'mensBand' ? `
                 <div class="grid grid-cols-3 gap-3 border-t border-brand-200 pt-4 mt-2">
-                    <div><label class="text-[10px] font-bold text-brand-500 uppercase block mb-1">US Size</label><input type="number" class="border p-2.5 rounded-xl w-full font-bold text-sm bg-white shadow-sm placeholder-brand-300" placeholder="e.g., 9" value="${r.mbSize}" oninput="state.quoteSession.mensBand.mbSize=this.value; updateQuoteTotals()" /></div>
-                    <div><label class="text-[10px] font-bold text-brand-500 uppercase block mb-1">Width (mm)</label><input type="number" class="border p-2.5 rounded-xl w-full font-bold text-sm bg-white shadow-sm placeholder-brand-300" placeholder="(mm)" value="${r.mbWidth}" oninput="state.quoteSession.mensBand.mbWidth=this.value; updateQuoteTotals()" /></div>
-                    <div><label class="text-[10px] font-bold text-brand-500 uppercase block mb-1">Thick (mm)</label><input type="number" class="border p-2.5 rounded-xl w-full font-bold text-sm bg-white shadow-sm placeholder-brand-300" placeholder="(mm)" value="${r.mbThickness}" oninput="state.quoteSession.mensBand.mbThickness=this.value; updateQuoteTotals()" /></div>
+                    <div><label class="text-[10px] font-bold text-brand-500 uppercase block mb-1">US Size</label><input type="number" class="border p-2.5 rounded-xl w-full font-bold text-sm bg-white shadow-sm placeholder-brand-300" placeholder="e.g., 9" value="${r.mbSize}" oninput="state.quoteSession.rings[${ringIdx}].mbSize=this.value; updateQuoteTotals()" /></div>
+                    <div><label class="text-[10px] font-bold text-brand-500 uppercase block mb-1">Width (mm)</label><input type="number" class="border p-2.5 rounded-xl w-full font-bold text-sm bg-white shadow-sm placeholder-brand-300" placeholder="(mm)" value="${r.mbWidth}" oninput="state.quoteSession.rings[${ringIdx}].mbWidth=this.value; updateQuoteTotals()" /></div>
+                    <div><label class="text-[10px] font-bold text-brand-500 uppercase block mb-1">Thick (mm)</label><input type="number" class="border p-2.5 rounded-xl w-full font-bold text-sm bg-white shadow-sm placeholder-brand-300" placeholder="(mm)" value="${r.mbThickness}" oninput="state.quoteSession.rings[${ringIdx}].mbThickness=this.value; updateQuoteTotals()" /></div>
                 </div>
                 <div class="bg-brand-50 p-3 rounded-xl border border-brand-200 mt-4 text-center">
                     <span class="text-[10px] font-bold text-brand-600 uppercase block mb-1">Calculated Raw Weight</span>
-                    <span id="mb-calculated-weight" class="text-xl font-black text-brand-900">${r.goldGrams ? r.goldGrams + 'g' : '0.00g'}</span>
+                    <span id="mb-calc-weight-${r.id}" class="text-xl font-black text-brand-900">${r.goldGrams ? r.goldGrams + 'g' : '0.00g'}</span>
                 </div>
             ` : `
                 <div>
                     <label class="text-[10px] font-bold text-brand-500 uppercase block mb-1">Finished Structural Weight (Grams)</label>
-                    <input type="number" class="border p-3 rounded-xl w-full font-bold text-sm bg-white shadow-sm placeholder-brand-300" placeholder="0.00g" value="${r.goldGrams}" oninput="state.quoteSession.${type}.goldGrams=this.value; updateQuoteTotals()" />
+                    <input type="number" class="border p-3 rounded-xl w-full font-bold text-sm bg-white shadow-sm placeholder-brand-300" placeholder="0.00g" value="${r.goldGrams}" oninput="state.quoteSession.rings[${ringIdx}].goldGrams=this.value; updateQuoteTotals()" />
                 </div>
                 <div class="grid grid-cols-3 gap-3 border-t border-brand-200 pt-4 mt-5">
-                    <div><label class="text-[10px] font-bold text-brand-500 uppercase block mb-1">US Size</label><input type="number" class="border p-2.5 rounded-xl w-full font-bold text-sm bg-white shadow-sm placeholder-brand-300 text-brand-600" placeholder="e.g., 7.5" value="${r.cRingSize || ''}" oninput="state.quoteSession.${type}.cRingSize=this.value" /></div>
-                    <div><label class="text-[10px] font-bold text-brand-500 uppercase block mb-1">Width (mm)</label><input type="number" class="border p-2.5 rounded-xl w-full font-bold text-sm bg-white shadow-sm placeholder-brand-300 text-brand-600" placeholder="(mm)" value="${r.cBandWidth || ''}" oninput="state.quoteSession.${type}.cBandWidth=this.value" /></div>
-                    <div><label class="text-[10px] font-bold text-brand-500 uppercase block mb-1">Thick (mm)</label><input type="number" class="border p-2.5 rounded-xl w-full font-bold text-sm bg-white shadow-sm placeholder-brand-300 text-brand-600" placeholder="(mm)" value="${r.cBandThickness || ''}" oninput="state.quoteSession.${type}.cBandThickness=this.value" /></div>
+                    <div><label class="text-[10px] font-bold text-brand-500 uppercase block mb-1">US Size</label><input type="number" class="border p-2.5 rounded-xl w-full font-bold text-sm bg-white shadow-sm placeholder-brand-300 text-brand-600" placeholder="e.g., 7.5" value="${r.cRingSize || ''}" oninput="state.quoteSession.rings[${ringIdx}].cRingSize=this.value" /></div>
+                    <div><label class="text-[10px] font-bold text-brand-500 uppercase block mb-1">Width (mm)</label><input type="number" class="border p-2.5 rounded-xl w-full font-bold text-sm bg-white shadow-sm placeholder-brand-300 text-brand-600" placeholder="(mm)" value="${r.cBandWidth || ''}" oninput="state.quoteSession.rings[${ringIdx}].cBandWidth=this.value" /></div>
+                    <div><label class="text-[10px] font-bold text-brand-500 uppercase block mb-1">Thick (mm)</label><input type="number" class="border p-2.5 rounded-xl w-full font-bold text-sm bg-white shadow-sm placeholder-brand-300 text-brand-600" placeholder="(mm)" value="${r.cBandThickness || ''}" oninput="state.quoteSession.rings[${ringIdx}].cBandThickness=this.value" /></div>
                 </div>
             `;
 
@@ -948,13 +990,13 @@
                     <div class="flex gap-4">
                         <div class="w-1/2">
                             <label class="text-[10px] font-bold text-brand-500 uppercase block mb-1">Shape / Cut</label>
-                            <select class="border p-3 rounded-xl w-full text-sm font-bold bg-brand-50 shadow-sm text-brand-800" onchange="state.quoteSession.customRing.centerStone.shape=this.value; updateQuoteTotals()">
+                            <select class="border p-3 rounded-xl w-full text-sm font-bold bg-brand-50 shadow-sm text-brand-800" onchange="state.quoteSession.rings[${ringIdx}].centerStone.shape=this.value; updateQuoteTotals()">
                                 ${CENTER_SHAPES.map(s => `<option value="${s}" ${r.centerStone?.shape === s ? 'selected' : ''}>${s}</option>`).join('')}
                             </select>
                         </div>
                         <div class="w-1/2">
                             <label class="text-[10px] font-bold text-brand-500 uppercase block mb-1">Total Carat Weight</label>
-                            <input type="number" class="border p-3 rounded-xl w-full text-sm font-bold bg-brand-50 shadow-sm text-brand-800 placeholder-brand-300" placeholder="0.00 ct" value="${r.centerStone?.carats || ''}" oninput="state.quoteSession.customRing.centerStone.carats=this.value; updateQuoteTotals()" />
+                            <input type="number" class="border p-3 rounded-xl w-full text-sm font-bold bg-brand-50 shadow-sm text-brand-800 placeholder-brand-300" placeholder="0.00 ct" value="${r.centerStone?.carats || ''}" oninput="state.quoteSession.rings[${ringIdx}].centerStone.carats=this.value; updateQuoteTotals()" />
                         </div>
                     </div>
                 </div>
@@ -969,42 +1011,42 @@
                                 <div>Dimension</div><div>Carats</div><div>Qty</div><div class="text-right">Sum</div><div></div>
                             </div>
                             <div class="max-h-80 overflow-y-auto divide-y divide-brand-100">
-                                ${(r.melee || []).map((m, idx) => {
+                                ${(r.melee || []).map((m, meleeIdx) => {
                                     if(!m) return '';
                                     return `
                                     <div class="grid grid-cols-[2fr_1fr_1fr_1fr_auto] items-center p-2 hover:bg-brand-50/50 transition-colors gap-2">
                                         <div>
-                                            <select class="border p-2 rounded-lg w-full font-bold bg-white text-brand-800 shadow-sm" onchange="updateMeleeSize('${type}', ${idx}, this.value)">
+                                            <select class="border p-2 rounded-lg w-full font-bold bg-white text-brand-800 shadow-sm" onchange="updateMeleeSize(${ringIdx}, ${meleeIdx}, this.value)">
                                                 ${Object.keys(ROUND_MELEE).map(sz => `<option value="${sz}" ${m.size === sz ? 'selected' : ''}>${sz}mm</option>`).join('')}
                                             </select>
                                         </div>
-                                        <div id="melee-carat-${type}-${idx}" class="text-brand-500 font-mono text-center">${(m.carat||0).toFixed(3)}</div>
-                                        <div><input type="number" placeholder="0" class="border p-2 rounded-lg w-full text-center no-spinner font-semibold bg-white shadow-sm" value="${m.qty}" oninput="updateMeleeQty('${type}', ${idx}, this.value)" /></div>
-                                        <div id="quote-melee-row-${type}-${idx}" class="text-right font-semibold text-brand-700">0.000</div>
-                                        <div class="text-center"><button onclick="removeMeleeRow('${type}', ${idx})" class="text-red-400 font-bold px-2 hover:text-red-600 text-lg">&times;</button></div>
+                                        <div id="melee-carat-${ringIdx}-${meleeIdx}" class="text-brand-500 font-mono text-center">${(m.carat||0).toFixed(3)}</div>
+                                        <div><input type="number" placeholder="0" class="border p-2 rounded-lg w-full text-center no-spinner font-semibold bg-white shadow-sm" value="${m.qty}" oninput="updateMeleeQty(${ringIdx}, ${meleeIdx}, this.value)" /></div>
+                                        <div id="quote-melee-row-${ringIdx}-${meleeIdx}" class="text-right font-semibold text-brand-700">0.000</div>
+                                        <div class="text-center"><button onclick="removeMeleeRow(${ringIdx}, ${meleeIdx})" class="text-red-400 font-bold px-2 hover:text-red-600 text-lg">&times;</button></div>
                                     </div>
                                 `}).join('')}
                             </div>
                             <div class="p-3 border-t border-brand-100 bg-brand-50 text-center">
-                                <button onclick="addMeleeRow('${type}')" class="text-[10px] uppercase tracking-wider font-bold text-brand-700 bg-white border border-brand-200 px-5 py-2.5 rounded-lg hover:border-brand-gold hover:text-brand-gold transition-all shadow-sm">+ Add Round Stone Line</button>
+                                <button onclick="addMeleeRow(${ringIdx})" class="text-[10px] uppercase tracking-wider font-bold text-brand-700 bg-white border border-brand-200 px-5 py-2.5 rounded-lg hover:border-brand-gold hover:text-brand-gold transition-all shadow-sm">+ Add Round Stone Line</button>
                             </div>
                             <div class="bg-brand-50/50 p-4 border-t border-brand-200 space-y-3">
                                 <h4 class="text-[10px] font-bold text-brand-600 uppercase tracking-wider">Dynamic Fancy Cut Integration</h4>
-                                <div class="grid grid-cols-4 items-center gap-3">
-                                    <select class="border p-2.5 rounded-xl w-full font-bold text-xs bg-white text-brand-800 shadow-sm" onchange="state.quoteSession.${type}.fancyShape=this.value; state.quoteSession.${type}.fancySizeIdx=0; render()">
+                                <div class="grid grid-cols-[1.5fr_2fr_1fr_1fr] items-center gap-3">
+                                    <select class="border p-2.5 rounded-xl w-full font-bold text-xs bg-white text-brand-800 shadow-sm" onchange="state.quoteSession.rings[${ringIdx}].fancyShape=this.value; state.quoteSession.rings[${ringIdx}].fancySizeIdx=0; render()">
                                         ${shapeOpts.map(s => `<option value="${s}" ${r.fancyShape===s?'selected':''}>${s}</option>`).join('')}
                                     </select>
-                                    <select class="border p-2.5 rounded-xl w-full text-xs font-medium text-brand-600 bg-white shadow-sm" onchange="state.quoteSession.${type}.fancySizeIdx=Number(this.value); updateQuoteTotals(); render()">
+                                    <select class="border p-2.5 rounded-xl w-full text-[11px] font-medium text-brand-600 bg-white shadow-sm" onchange="state.quoteSession.rings[${ringIdx}].fancySizeIdx=Number(this.value); updateQuoteTotals(); render()">
                                         ${activeShapeArray.map((sz, idx) => `<option value="${idx}" ${r.fancySizeIdx===idx?'selected':''}>${sz.label}</option>`).join('')}
                                     </select>
-                                    <input type="number" placeholder="Units" class="border p-2.5 rounded-xl w-full text-center no-spinner font-semibold bg-white text-sm shadow-sm placeholder-brand-300" value="${r.fancyQty}" oninput="state.quoteSession.${type}.fancyQty=this.value; updateQuoteTotals()" />
-                                    <div id="quote-fancy-row-total-${type}" class="text-right font-black text-brand-800 pr-2">0.000</div>
+                                    <input type="number" placeholder="Qty" class="border p-2.5 rounded-xl w-full text-center no-spinner font-semibold bg-white text-sm shadow-sm placeholder-brand-300" value="${r.fancyQty}" oninput="state.quoteSession.rings[${ringIdx}].fancyQty=this.value; updateQuoteTotals()" />
+                                    <div id="quote-fancy-row-total-${r.id}" class="text-right font-black text-brand-800 pr-2">0.000</div>
                                 </div>
                             </div>
                         </div>
                         <div class="p-4 bg-brand-800 rounded-xl flex justify-between items-center shadow-md border border-brand-700">
                             <div class="text-xs font-bold text-brand-300 uppercase tracking-wider">Total Melee Carats</div>
-                            <div class="text-right"><span id="quote-total-melee-cts-${type}" class="text-2xl font-black text-brand-gold">0.000</span> <span class="text-xs font-bold text-brand-400">cts</span></div>
+                            <div class="text-right"><span id="quote-total-melee-cts-${r.id}" class="text-2xl font-black text-brand-gold">0.000</span> <span class="text-xs font-bold text-brand-400">cts</span></div>
                         </div>
                     </div>
 
@@ -1013,12 +1055,12 @@
                             <div class="absolute top-0 left-0 w-1.5 h-full bg-brand-600"></div>
                             <div class="flex justify-between border-b border-brand-100 pb-3">
                                 <h3 class="font-serif text-xl italic font-bold text-brand-800">Structural Metal</h3>
-                                <div id="quote-ring-total-${type}" class="text-lg font-black text-brand-900">$0.00</div>
+                                <div id="quote-ring-total-${r.id}" class="text-lg font-black text-brand-900">$0.00</div>
                             </div>
                             <div class="grid grid-cols-2 gap-4">
                                 <div>
                                     <label class="text-[10px] font-bold text-brand-500 uppercase block mb-1">Elemental Base</label>
-                                    <select class="border p-3 rounded-xl w-full text-sm font-bold text-brand-800 bg-brand-50 shadow-sm" onchange="state.quoteSession.${type}.material=this.value; updateQuoteTotals(); render()">
+                                    <select class="border p-3 rounded-xl w-full text-sm font-bold text-brand-800 bg-brand-50 shadow-sm" onchange="state.quoteSession.rings[${ringIdx}].material=this.value; updateQuoteTotals(); render()">
                                         <option value="gold" ${r.material==='gold'?'selected':''}>Gold Base</option>
                                         <option value="platinum" ${r.material==='platinum'?'selected':''}>Platinum Base</option>
                                         <option value="silver" ${r.material==='silver'?'selected':''}>Silver Base</option>
@@ -1027,7 +1069,7 @@
                                 ${r.material === 'gold' ? `
                                 <div>
                                     <label class="text-[10px] font-bold text-brand-500 uppercase block mb-1">Purity Tier</label>
-                                    <select class="border p-3 rounded-xl w-full text-sm font-bold text-brand-800 bg-brand-50 shadow-sm" onchange="state.quoteSession.${type}.goldKarat=Number(this.value); updateQuoteTotals()">
+                                    <select class="border p-3 rounded-xl w-full text-sm font-bold text-brand-800 bg-brand-50 shadow-sm" onchange="state.quoteSession.rings[${ringIdx}].goldKarat=Number(this.value); updateQuoteTotals()">
                                         ${Object.keys(state.settings.goldPricesPerGram || {}).map(k => `<option value="${k}" ${Number(k)===r.goldKarat?'selected':''}>${k}k Premium</option>`).join('')}
                                     </select>
                                 </div>
@@ -1040,7 +1082,7 @@
 
                         <div class="bg-white p-5 rounded-2xl border border-brand-200 shadow-sm space-y-4 relative overflow-hidden mt-5">
                             <div class="absolute top-0 left-0 w-1.5 h-full bg-brand-400"></div>
-                            <div><h3 class="text-xs font-bold text-brand-700 uppercase tracking-widest border-b border-brand-100 pb-2 mb-3">Addons & Extras</h3><input type="number" class="border p-3 rounded-xl w-full font-bold text-sm bg-brand-50 shadow-sm text-brand-900 placeholder-brand-400" placeholder="$0.00 Addon Amount" value="${r.customAddon}" oninput="state.quoteSession.${type}.customAddon=this.value; updateQuoteTotals()" /></div>
+                            <div><h3 class="text-xs font-bold text-brand-700 uppercase tracking-widest border-b border-brand-100 pb-2 mb-3">Addons & Extras</h3><input type="number" class="border p-3 rounded-xl w-full font-bold text-sm bg-brand-50 shadow-sm text-brand-900 placeholder-brand-400" placeholder="$0.00 Addon Amount" value="${r.customAddon}" oninput="state.quoteSession.rings[${ringIdx}].customAddon=this.value; updateQuoteTotals()" /></div>
                         </div>
                     </div>
                 </div>
@@ -1052,26 +1094,29 @@
                 <div class="space-y-6 mt-8 animate-fadeIn max-w-2xl mx-auto">
                     <div class="text-center mb-6"><h2 class="font-serif text-3xl italic font-bold text-brand-900">Bridal Stack Summary</h2><p class="text-xs text-brand-500 mt-2 uppercase tracking-widest font-bold">Itemized Checkout Consultation</p></div>
                     
-                    ${['customRing', 'weddingBand', 'mensBand'].map(type => {
-                        if (!hasRingData(type)) return '';
-                        const r = state.quoteSession[type];
-                        const title = type === 'customRing' ? 'Engagement / Custom Ring' : (type === 'weddingBand' ? 'Wedding Band' : "Men's Band");
+                    ${(state.quoteSession.rings || []).map((r, i) => {
+                        if (!hasRingData(null, { null: r })) return '';
+                        const title = r.category === 'customRing' ? 'Engagement / Custom Ring' : (r.category === 'weddingBand' ? 'Wedding Band' : "Men's Band");
                         
                         let centerStr = '';
-                        if (type === 'customRing' && r.centerStone?.carats) {
+                        if (r.category === 'customRing' && r.centerStone?.carats) {
                             centerStr = `<p><strong class="text-brand-800">Centerstone:</strong> ${r.centerStone.carats}ct ${r.centerStone.shape}</p>`;
                         }
 
-                        const ringTotal = calculateSpecificRingCost(type);
+                        // Temp assign to wrapper for calculate function
+                        const mockState = { quoteSession: { temp: r } };
+                        const oldState = state.quoteSession; state.quoteSession = mockState.quoteSession;
+                        const ringTotal = calculateRingCost(r);
+                        state.quoteSession = oldState;
 
                         return `
                             <div class="bg-white p-6 rounded-2xl border border-brand-200 shadow-md relative">
                                 <div class="absolute top-5 right-5 bg-brand-50 px-4 py-2 rounded-xl border border-brand-200 font-black text-brand-900 shadow-sm">$${ringTotal.toFixed(2)}</div>
-                                <h3 class="text-sm font-black uppercase tracking-wider text-brand-800 border-b border-brand-100 pb-3 mb-4 pr-28">${title}</h3>
+                                <h3 class="text-sm font-black uppercase tracking-wider text-brand-800 border-b border-brand-100 pb-3 mb-4 pr-28">${title} ${i+1>1?`(${i+1})`:''}</h3>
                                 <div class="grid grid-cols-2 text-sm gap-y-3 text-brand-600">
                                     <p><strong class="text-brand-800">Metal:</strong> ${r.goldGrams}g ${r.material} (${r.material==='gold'?r.goldKarat+'k':'Solid'})</p>
-                                    ${type === 'mensBand' && r.mbSize ? `<p><strong class="text-brand-800">Specs:</strong> Sz ${r.mbSize} (${r.mbWidth}x${r.mbThickness}mm)</p>` : ''}
-                                    ${type !== 'mensBand' && r.cRingSize ? `<p><strong class="text-brand-800">Specs:</strong> Sz ${r.cRingSize} (${r.cBandWidth}x${r.cBandThickness}mm)</p>` : ''}
+                                    ${r.category === 'mensBand' && r.mbSize ? `<p><strong class="text-brand-800">Specs:</strong> Sz ${r.mbSize} (${r.mbWidth}x${r.mbThickness}mm)</p>` : ''}
+                                    ${r.category !== 'mensBand' && r.cRingSize ? `<p><strong class="text-brand-800">Specs:</strong> Sz ${r.cRingSize} (${r.cBandWidth}x${r.cBandThickness}mm)</p>` : ''}
                                     ${centerStr}
                                     <p><strong class="text-brand-800">Fancy Accent:</strong> ${r.fancyQty || 0}x ${r.fancyShape}</p>
                                     <p><strong class="text-brand-800">Addon:</strong> $${r.customAddon || 0}</p>
@@ -1080,7 +1125,7 @@
                         `;
                     }).join('')}
                     
-                    ${!hasRingData('customRing') && !hasRingData('weddingBand') && !hasRingData('mensBand') ? `
+                    ${(state.quoteSession.rings || []).filter(r => hasRingData(null, { null: r })).length === 0 ? `
                         <div class="text-center py-16 border-2 border-dashed rounded-2xl border-brand-200 text-brand-400 font-bold bg-white">No rings configured in this session yet.</div>
                     ` : `
                         <div class="bg-brand-900 text-white p-8 rounded-2xl shadow-2xl mt-8 border border-brand-800">
@@ -1129,10 +1174,16 @@
 
                     <div class="flex justify-center mb-4">
                         <div class="bg-brand-100 p-1.5 rounded-2xl flex gap-1 shadow-inner border border-brand-200 overflow-x-auto w-full hide-scrollbar">
-                            <button onclick="state.quoteSession.activeSubTab='customRing'; render()" class="px-5 py-2.5 rounded-xl text-xs md:text-sm font-bold transition-all whitespace-nowrap ${state.quoteSession.activeSubTab==='customRing'?'bg-white shadow-md text-brand-900':'text-brand-600 hover:text-brand-800'}">Engagement</button>
-                            <button onclick="state.quoteSession.activeSubTab='weddingBand'; render()" class="px-5 py-2.5 rounded-xl text-xs md:text-sm font-bold transition-all whitespace-nowrap ${state.quoteSession.activeSubTab==='weddingBand'?'bg-white shadow-md text-brand-900':'text-brand-600 hover:text-brand-800'}">Wedding Band</button>
-                            <button onclick="state.quoteSession.activeSubTab='mensBand'; render()" class="px-5 py-2.5 rounded-xl text-xs md:text-sm font-bold transition-all whitespace-nowrap ${state.quoteSession.activeSubTab==='mensBand'?'bg-white shadow-md text-brand-900':'text-brand-600 hover:text-brand-800'}">Men's Band</button>
-                            <button onclick="state.quoteSession.activeSubTab='summary'; render()" class="px-5 py-2.5 rounded-xl text-xs md:text-sm font-bold transition-all whitespace-nowrap ${state.quoteSession.activeSubTab==='summary'?'bg-brand-800 shadow-md text-brand-gold':'text-brand-600 hover:text-brand-800'}">Summary</button>
+                            ${(state.quoteSession.rings || []).map((r, i) => `
+                                <div class="flex items-center ${state.quoteSession.activeSubTab === r.id ? 'bg-white shadow-md' : 'hover:bg-brand-200'} rounded-xl transition-all">
+                                    <button onclick="state.quoteSession.activeSubTab='${r.id}'; render()" class="pl-4 pr-2 py-2.5 text-xs md:text-sm font-bold ${state.quoteSession.activeSubTab === r.id ? 'text-brand-900' : 'text-brand-600'} whitespace-nowrap">
+                                        ${r.category === 'customRing' ? 'Engagement' : r.category === 'weddingBand' ? 'Wedding' : 'Men\'s'} ${i+1>1?i+1:''}
+                                    </button>
+                                    <button onclick="removeRing('${r.id}')" class="pr-3 pl-1 text-brand-300 hover:text-red-500 font-bold text-lg leading-none">&times;</button>
+                                </div>
+                            `).join('')}
+                            <button onclick="document.getElementById('add-ring-modal').classList.remove('hidden')" class="px-4 py-2.5 rounded-xl text-xs md:text-sm font-bold transition-all whitespace-nowrap text-brand-600 hover:bg-brand-200">+ Add Ring</button>
+                            <button onclick="state.quoteSession.activeSubTab='summary'; render()" class="px-5 py-2.5 rounded-xl text-xs md:text-sm font-bold transition-all whitespace-nowrap ${state.quoteSession.activeSubTab==='summary'?'bg-brand-800 shadow-md text-brand-gold':'text-brand-600 hover:text-brand-800'} ml-auto">Summary</button>
                         </div>
                     </div>
 
@@ -1143,38 +1194,67 @@
                         <button onclick="saveRingQuote()" class="w-full bg-brand-800 text-brand-gold p-4 rounded-xl font-black text-sm uppercase tracking-[0.1em] shadow-lg hover:bg-brand-900 transition-all border border-brand-700">Save Consultation to Ledger</button>
                     </div>
                 </div>
-            `;
-        }
 
-        function showScrapDetails(idx) {
-            const t = state.scrapTransactions[idx];
-            if (!t) return;
-            const modal = document.getElementById('modal-backdrop');
-            document.getElementById('modal-content').innerHTML = `
-                <div id="print-area">
-                    <div class="text-center mb-6">
-                        <h1 class="font-serif text-4xl italic text-brand-900">Gold and Rose</h1>
-                        <h2 class="text-xs font-bold text-brand-500 uppercase tracking-widest mt-2">Scrap Buyback Receipt</h2>
-                    </div>
-                    <div class="space-y-4 text-sm border-t border-brand-200 pt-5 text-brand-800">
-                        <p><strong class="text-brand-500 uppercase text-[10px] tracking-wider block mb-1">Timestamp</strong> ${t.date || ''}</p>
-                        <p><strong class="text-brand-500 uppercase text-[10px] tracking-wider block mb-1">Customer</strong> ${t.name || ''}</p>
-                        <p><strong class="text-brand-500 uppercase text-[10px] tracking-wider block mb-1">Phone</strong> ${t.phone || 'N/A'}</p>
-                        <hr class="border-brand-100 my-2">
-                        <p><strong class="text-brand-500 uppercase text-[10px] tracking-wider block mb-1">Items Received</strong> ${t.summary || ''}</p>
-                        <div class="bg-brand-50 p-4 rounded-xl mt-4 text-center border border-brand-200">
-                            <span class="text-[10px] font-bold text-brand-500 uppercase tracking-wider block mb-1">Total Cash Payout</span>
-                            <span class="text-3xl font-black text-brand-900">$${t.total || '0.00'}</span>
+                <!-- Add Ring Modal -->
+                <div id="add-ring-modal" class="fixed inset-0 bg-brand-900/60 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
+                    <div class="bg-white rounded-3xl p-6 w-full max-w-sm shadow-2xl border border-brand-100 text-center animate-fadeIn">
+                        <h3 class="font-serif text-xl italic font-bold text-brand-900 mb-4">Add Ring to Stack</h3>
+                        <div class="flex flex-col gap-3">
+                            <button onclick="addNewRing('customRing')" class="bg-brand-50 hover:bg-brand-100 text-brand-800 font-bold py-3.5 rounded-xl border border-brand-200 shadow-sm transition-colors">Engagement / Custom Ring</button>
+                            <button onclick="addNewRing('weddingBand')" class="bg-brand-50 hover:bg-brand-100 text-brand-800 font-bold py-3.5 rounded-xl border border-brand-200 shadow-sm transition-colors">Wedding Band</button>
+                            <button onclick="addNewRing('mensBand')" class="bg-brand-50 hover:bg-brand-100 text-brand-800 font-bold py-3.5 rounded-xl border border-brand-200 shadow-sm transition-colors">Men's Band</button>
                         </div>
-                        ${t.image ? `<div class="mt-6"><p class="mb-2 text-[10px] font-bold text-brand-500 uppercase tracking-wider">ID / Reference Image:</p><img src="${t.image}" class="w-full max-w-[250px] rounded-xl border border-brand-200 shadow-sm" /></div>` : ''}
+                        <button onclick="document.getElementById('add-ring-modal').classList.add('hidden')" class="mt-5 text-xs font-bold text-brand-500 uppercase tracking-widest hover:text-brand-800">Cancel</button>
                     </div>
                 </div>
-                <div id="print-button" class="mt-8 flex gap-3">
-                    <button onclick="window.print()" class="flex-1 bg-brand-800 text-brand-gold py-3.5 rounded-xl font-bold uppercase tracking-wider text-sm shadow-md hover:bg-brand-900 transition-colors">Print Receipt</button>
-                    <button onclick="document.getElementById('modal-backdrop').classList.add('hidden')" class="flex-1 bg-brand-100 text-brand-700 py-3.5 rounded-xl font-bold uppercase tracking-wider text-sm hover:bg-brand-200 transition-colors">Close</button>
-                </div>
+
+                <!-- Sketchpad -->
+                ${state.isSketching ? `
+                    <div class="fixed inset-0 bg-brand-100 z-[100] flex flex-col animate-fadeIn">
+                        <div class="flex justify-between items-center p-4 bg-brand-900 text-white shadow-md z-10 border-b border-brand-800">
+                            <h3 class="font-bold tracking-widest uppercase text-sm text-brand-gold">Design Sketchpad</h3>
+                            <div class="flex gap-3 items-center">
+                                <button onclick="clearSketch()" class="text-xs text-red-400 font-bold hover:text-red-300 px-3">Clear</button>
+                                <button onclick="closeSketcher()" class="text-xs text-brand-300 font-bold hover:text-white px-3 border-r border-brand-700 pr-5">Cancel</button>
+                                <button onclick="saveSketch()" class="text-xs bg-brand-gold text-brand-900 hover:bg-brand-goldHover px-5 py-2 rounded-lg font-black transition-all shadow-sm">Save</button>
+                            </div>
+                        </div>
+                        
+                        <div class="flex-1 relative overflow-hidden bg-white cursor-crosshair" id="sketch-container">
+                            <img id="sketch-bg" style="display: none; position: absolute; pointer-events: none;" />
+                            <div id="transform-box">
+                                <div id="handle-rotate" class="transform-handle">${ICONS.rotate}</div>
+                                <div id="handle-scale" class="transform-handle">${ICONS.scale}</div>
+                            </div>
+                            <canvas id="sketch-canvas" class="absolute inset-0 w-full h-full touch-none"></canvas>
+                        </div>
+
+                        <div class="absolute bottom-6 left-1/2 -translate-x-1/2 bg-white/95 backdrop-blur-xl px-4 py-3 rounded-2xl shadow-2xl border border-brand-200 flex flex-wrap justify-center gap-4 sm:gap-6 items-center z-20 w-[90%] sm:w-auto">
+                            <div class="flex gap-2 border-r pr-4 sm:pr-6 border-brand-200 text-brand-500">
+                                <button id="tool-pen" onclick="setSketchTool('pen')" class="p-2.5 bg-brand-gold/10 text-brand-gold rounded-xl shadow-inner border-2 border-brand-gold transition-all" title="Pen Tool">${ICONS.pen}</button>
+                                <button id="tool-highlighter" onclick="setSketchTool('highlighter')" class="p-2.5 bg-transparent hover:bg-brand-50 rounded-xl border-2 border-transparent transition-all" title="Highlighter">${ICONS.highlighter}</button>
+                                <button id="tool-eraser" onclick="setSketchTool('eraser')" class="p-2.5 bg-transparent hover:bg-brand-50 rounded-xl border-2 border-transparent transition-all" title="Eraser">${ICONS.eraser}</button>
+                                <button id="tool-transform" onclick="setSketchTool('transform')" class="p-2.5 bg-transparent hover:bg-brand-50 rounded-xl border-2 border-transparent transition-all" title="Move & Scale Image">${ICONS.transform}</button>
+                            </div>
+                            <div class="flex flex-col gap-1 border-r pr-4 sm:pr-6 border-brand-200 items-center justify-center min-w-[80px]">
+                                <label class="cursor-pointer text-[10px] font-bold text-brand-700 bg-brand-100 px-3 py-1.5 rounded-lg hover:bg-brand-200 transition-all text-center flex items-center gap-1.5 shadow-sm">${ICONS.camera} Photo<input type="file" accept="image/*" class="hidden" onchange="handleSketchBgUpload(event)" /></label>
+                            </div>
+                            <div class="flex gap-2 sm:gap-3 border-r pr-4 sm:pr-6 border-brand-200">
+                                <button id="color-slate" onclick="setSketchColor('#1e293b', 'slate')" class="w-6 h-6 sm:w-8 sm:h-8 rounded-full bg-brand-800 border-2 border-brand-400 shadow-md scale-110 transition-all"></button>
+                                <button id="color-gold" onclick="setSketchColor('#d4af37', 'gold')" class="w-6 h-6 sm:w-8 sm:h-8 rounded-full bg-brand-gold border-2 border-transparent shadow-sm scale-100 transition-all"></button>
+                                <button id="color-red" onclick="setSketchColor('#dc2626', 'red')" class="w-6 h-6 sm:w-8 sm:h-8 rounded-full bg-red-600 border-2 border-transparent shadow-sm scale-100 transition-all"></button>
+                                <button id="color-green" onclick="setSketchColor('#16a34a', 'green')" class="w-6 h-6 sm:w-8 sm:h-8 rounded-full bg-green-600 border-2 border-transparent shadow-sm scale-100 transition-all"></button>
+                                <button id="color-yellow" onclick="setSketchColor('#facc15', 'yellow')" class="w-6 h-6 sm:w-8 sm:h-8 rounded-full bg-yellow-400 border-2 border-transparent shadow-sm scale-100 transition-all"></button>
+                            </div>
+                            <div class="flex gap-3 sm:gap-4 items-center pl-2">
+                                <button id="thick-1" onclick="setSketchThickness(1.5, 1)" class="w-3.5 h-3.5 bg-brand-300 rounded-full hover:bg-brand-500 transition-all shadow-none"></button>
+                                <button id="thick-2" onclick="setSketchThickness(3.0, 2)" class="w-5 h-5 bg-brand-gold rounded-full shadow-md transition-all"></button>
+                                <button id="thick-3" onclick="setSketchThickness(6.0, 3)" class="w-7 h-7 bg-brand-300 rounded-full hover:bg-brand-500 transition-all shadow-none"></button>
+                            </div>
+                        </div>
+                    </div>
+                ` : ''}
             `;
-            modal.classList.remove('hidden');
         }
 
         function showQuoteDetails(idx) {
@@ -1182,10 +1262,15 @@
             if (!q) return;
             let d = q.fullData ? JSON.parse(JSON.stringify(q.fullData)) : getEmptyQuoteSession();
             
-            if (!d.customRing && !d.weddingBand && !d.mensBand) {
+            // Temporary Migrator for legacy view support
+            if (!d.rings) {
                 const legacy = d; d = getEmptyQuoteSession();
-                if (legacy.type === 'mens_band') { d.mensBand = { ...d.mensBand, ...legacy }; }
-                else { d.customRing = { ...d.customRing, ...legacy }; }
+                d.rings = [];
+                if (legacy.customRing && hasRingData('customRing', legacy)) d.rings.push({ ...legacy.customRing, id: genId(), category: 'customRing' });
+                if (legacy.weddingBand && hasRingData('weddingBand', legacy)) d.rings.push({ ...legacy.weddingBand, id: genId(), category: 'weddingBand' });
+                if (legacy.mensBand && hasRingData('mensBand', legacy)) d.rings.push({ ...legacy.mensBand, id: genId(), category: 'mensBand' });
+                if (d.rings.length === 0 && legacy.type === 'mens_band') d.rings.push({ ...getEmptyRing('mensBand'), ...legacy });
+                else if (d.rings.length === 0) d.rings.push({ ...getEmptyRing('customRing'), ...legacy });
                 d.notes = legacy.notes || ''; d.taxGST = legacy.taxGST; d.taxPST = legacy.taxPST;
             }
 
@@ -1205,26 +1290,24 @@
                         </div>
             `;
 
-            ['customRing', 'weddingBand', 'mensBand'].forEach(type => {
-                if(hasRingData(type, d)) {
-                    const r = d[type];
-                    const title = type === 'customRing' ? 'Engagement / Custom Ring' : (type === 'weddingBand' ? 'Wedding Band' : "Men's Band");
-                    let meleeSummary = (r.melee || []).filter(m => m && Number(m.qty) > 0).map(m => `${m.qty}x (${m.size}mm)`).join(', ') || "None";
-                    
-                    htmlStr += `
-                        <div class="border-t border-brand-200 pt-4 mt-4">
-                            <h3 class="font-serif italic font-bold text-lg text-brand-800 mb-2">${title}</h3>
-                            <div class="grid grid-cols-2 gap-y-2 text-xs">
-                                <p><strong class="text-brand-900">Metal:</strong> ${r.goldGrams}g ${r.material} (${r.material==='gold'?r.goldKarat+'k':'Solid'})</p>
-                                ${type === 'mensBand' && r.mbSize ? `<p><strong class="text-brand-900">Specs:</strong> Sz ${r.mbSize} (${r.mbWidth}x${r.mbThickness}mm)</p>` : ''}
-                                ${type !== 'mensBand' && r.cRingSize ? `<p><strong class="text-brand-900">Specs:</strong> Sz ${r.cRingSize} (${r.cBandWidth}x${r.cBandThickness}mm)</p>` : ''}
-                                ${type === 'customRing' && r.centerStone?.carats ? `<p><strong class="text-brand-900">Centerstone:</strong> ${r.centerStone.carats}ct ${r.centerStone.shape}</p>` : ''}
-                                <p><strong class="text-brand-900">Fancy Accent:</strong> ${r.fancyQty || 0}x ${r.fancyShape}</p>
-                                <p class="col-span-2"><strong class="text-brand-900">Melee Layout:</strong> ${meleeSummary}</p>
-                            </div>
+            (d.rings || []).forEach((r, i) => {
+                if(!hasRingData(null, {null: r})) return;
+                const title = r.category === 'customRing' ? 'Engagement / Custom Ring' : (r.category === 'weddingBand' ? 'Wedding Band' : "Men's Band");
+                let meleeSummary = (r.melee || []).filter(m => m && Number(m.qty) > 0).map(m => `${m.qty}x (${m.size}mm)`).join(', ') || "None";
+                
+                htmlStr += `
+                    <div class="border-t border-brand-200 pt-4 mt-4">
+                        <h3 class="font-serif italic font-bold text-lg text-brand-800 mb-2">${title} ${i+1>1?`(${i+1})`:''}</h3>
+                        <div class="grid grid-cols-2 gap-y-2 text-xs">
+                            <p><strong class="text-brand-900">Metal:</strong> ${r.goldGrams}g ${r.material} (${r.material==='gold'?r.goldKarat+'k':'Solid'})</p>
+                            ${r.category === 'mensBand' && r.mbSize ? `<p><strong class="text-brand-900">Specs:</strong> Sz ${r.mbSize} (${r.mbWidth}x${r.mbThickness}mm)</p>` : ''}
+                            ${r.category !== 'mensBand' && r.cRingSize ? `<p><strong class="text-brand-900">Specs:</strong> Sz ${r.cRingSize} (${r.cBandWidth}x${r.cBandThickness}mm)</p>` : ''}
+                            ${r.category === 'customRing' && r.centerStone?.carats ? `<p><strong class="text-brand-900">Centerstone:</strong> ${r.centerStone.carats}ct ${r.centerStone.shape}</p>` : ''}
+                            <p><strong class="text-brand-900">Fancy Accent:</strong> ${r.fancyQty || 0}x ${r.fancyShape}</p>
+                            <p class="col-span-2"><strong class="text-brand-900">Melee Layout:</strong> ${meleeSummary}</p>
                         </div>
-                    `;
-                }
+                    </div>
+                `;
             });
 
             let taxArray = []; if (d.taxGST) taxArray.push("GST (5%)"); if (d.taxPST) taxArray.push("PST (7%)");
@@ -1260,14 +1343,26 @@
             if (!q) return;
             let d = q.fullData ? JSON.parse(JSON.stringify(q.fullData)) : getEmptyQuoteSession();
             
-            if (!d.customRing && !d.weddingBand && !d.mensBand) {
+            // Legacy Migration to Rings Array
+            if (!d.rings) {
                 const legacy = d; d = getEmptyQuoteSession();
-                if (legacy.type === 'mens_band') { d.mensBand = { ...d.mensBand, ...legacy }; d.activeSubTab = 'mensBand'; }
-                else { d.customRing = { ...d.customRing, ...legacy }; d.activeSubTab = 'customRing'; }
+                d.rings = [];
+                if (legacy.customRing && hasRingData('customRing', legacy)) d.rings.push({ ...legacy.customRing, id: genId(), category: 'customRing' });
+                if (legacy.weddingBand && hasRingData('weddingBand', legacy)) d.rings.push({ ...legacy.weddingBand, id: genId(), category: 'weddingBand' });
+                if (legacy.mensBand && hasRingData('mensBand', legacy)) d.rings.push({ ...legacy.mensBand, id: genId(), category: 'mensBand' });
+                
+                if (d.rings.length === 0) {
+                    if (legacy.type === 'mens_band') d.rings.push({ ...getEmptyRing('mensBand'), ...legacy });
+                    else d.rings.push({ ...getEmptyRing('customRing'), ...legacy });
+                }
+                
+                d.activeSubTab = d.rings[0].id;
                 d.cName = legacy.cName || ''; d.cPhone = legacy.cPhone || ''; d.notes = legacy.notes || '';
                 d.taxGST = legacy.taxGST || false; d.taxPST = legacy.taxPST || false;
             }
             
+            // Keep the exact same quote ID so we OVERWRITE instead of duplicate
+            d.id = q.id || genId();
             state.quoteSession = d;
             state.quoteImage = q.image || null; bgImageObj = null; 
             state.activeTab = 'quote'; document.getElementById('modal-backdrop').classList.add('hidden');
