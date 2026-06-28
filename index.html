@@ -49,14 +49,33 @@
     <div id="app" class="min-h-screen p-3 md:p-8 max-w-5xl mx-auto"></div>
 
     <script>
-        // --- SECURE DATA PARSER (Prevents Memory Crashes) ---
+        // --- GLOBAL CRASH SHIELD ---
+        window.onerror = function(message, source, lineno, colno, error) {
+            document.getElementById('app').innerHTML = `
+                <div class="p-8 mt-10 max-w-md mx-auto bg-white rounded-3xl shadow-2xl border border-red-200 text-center animate-fadeIn">
+                    <div class="text-red-500 text-6xl mb-4">⚠️</div>
+                    <h2 class="text-2xl font-black text-brand-900 mb-2">System Error Caught</h2>
+                    <p class="text-sm text-brand-500 mb-6">The dashboard encountered an error. If this persists, use the reset button below.</p>
+                    <div class="bg-gray-100 p-3 rounded-xl text-left text-xs font-mono text-gray-500 mb-6 overflow-hidden">${message}<br>Line: ${lineno}</div>
+                    <button onclick="localStorage.clear(); window.location.reload();" class="w-full bg-red-600 text-white font-black uppercase tracking-widest text-sm py-4 rounded-xl hover:bg-red-700 shadow-md">Wipe Data & Factory Reset</button>
+                </div>
+            `;
+            return true;
+        };
+
+        // --- SECURE DATA PARSER ---
         function safeJSONParse(key, defaultVal) {
-            try { const val = localStorage.getItem(key); return val ? JSON.parse(val) : defaultVal; } 
-            catch (e) { console.warn(`Storage corrupted for ${key}.`); return defaultVal; }
+            try { 
+                const val = localStorage.getItem(key); 
+                if (!val || val === "null" || val === "undefined") return defaultVal;
+                const parsed = JSON.parse(val); 
+                return parsed !== null ? parsed : defaultVal;
+            } 
+            catch (e) { return defaultVal; }
         }
 
         // --- MASTER CONFIGURATIONS ---
-        const GOLD_API_KEY = 'INSERT_YOUR_NEW_KEY_HERE'; 
+        const GOLD_API_KEY = 'goldapi-472c240569490d4d25bde6da08749829-io'; 
         const TROY_ONCE_GRAMS = 31.1034768;
 
         const DENSITIES = { gold: { 10: 11.4, 14: 13.1, 18: 15.5, 19: 16.1, 22: 17.7, 24: 19.3 }, platinum: 20.1, silver: 10.4 };
@@ -87,8 +106,7 @@
             transform: `<svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><path d="M21 15v2a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-2"></path><path d="M21 9V7a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v2"></path></svg>`,
             camera: `<svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>`,
             scale: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 3 21 3 21 9"></polyline><polyline points="9 21 3 21 3 15"></polyline><line x1="21" y1="3" x2="14" y2="10"></line><line x1="3" y1="21" x2="10" y2="14"></line></svg>`,
-            rotate: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.59-9.28l5.67-5.67"/></svg>`,
-            trash: `<svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>`
+            rotate: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.59-9.28l5.67-5.67"/></svg>`
         };
 
         function getEmptyQuoteSession() {
@@ -105,8 +123,8 @@
             spotPrices: { gold: 3500.00, silver: 45.00, platinum: 1200.00 },
             customerName: '', phoneNumber: '', address: '', driversLicense: '', stoneRemovalQty: '', 
             scrapItems: [{ weight: '', material: 'gold', purity: 14, rate: 85 }], scrapImage: null,
-            scrapTransactions: safeJSONParse('gr_scrap_ledger', []),
-            ringQuoteTransactions: safeJSONParse('gr_quote_ledger', []),
+            scrapTransactions: [], 
+            ringQuoteTransactions: [], 
             lastUpdated: 'Manual Input', syncStatus: 'Idle', isEditingNotes: false,
             scrapNotes: "• 24k gold bullion (coins/bars) is typically purchased at 95% (5% margin).\n• Treat all calculations as confidential store reference data.",
             quickCalcPurity: 'gold_14', quickCalcGrams: '',
@@ -116,7 +134,7 @@
             quoteSession: getEmptyQuoteSession()
         };
 
-        // --- SKETCHPAD ENGINE ---
+        // --- SKETCHPAD ENGINE (PRO TRANSFORM) ---
         let sketchCtx; let isDrawing = false; let bgImageObj = null;
         let imgState = { x: 0, y: 0, scale: 1, rot: 0, width: 0, height: 0 };
         let sketchState = { tool: 'pen', color: '#1e293b', thickness: 3.0 }; 
@@ -284,17 +302,35 @@
 
         function closeSketcher() { state.isSketching = false; render(); }
 
-        // --- APP LOGIC & UPDATERS ---
+        // --- AUTO-HEALING INITIALIZATION & DATA SYNC ---
         function loadStorageData() {
-            const lsSettings = safeJSONParse('gr_master_settings', null);
-            if (lsSettings) {
-                state.settings.meleePricePerCt = lsSettings.meleePricePerCt || 2400;
-                state.settings.fancyPricePerCt = lsSettings.fancyPricePerCt || 700;
-                state.settings.goldPricesPerGram = lsSettings.goldPricesPerGram || { 10: 200, 14: 233, 18: 280, 19: 290, 22: 320 };
-                state.settings.platinumPricePerGram = lsSettings.platinumPricePerGram || 380;
-                state.settings.silverPricePerGram = lsSettings.silverPricePerGram || 100;
-                state.settings.rawCostRates = lsSettings.rawCostRates || { melee: 300, fancy: 380, center: 400 };
-                if (lsSettings.centerStones) state.settings.centerStones = lsSettings.centerStones;
+            try {
+                const st = safeJSONParse('gr_scrap_ledger', []); 
+                state.scrapTransactions = Array.isArray(st) ? st.filter(item => item && typeof item === 'object') : [];
+                
+                const qt = safeJSONParse('gr_quote_ledger', []); 
+                state.ringQuoteTransactions = Array.isArray(qt) ? qt.filter(item => item && typeof item === 'object') : [];
+
+                const lsSettings = safeJSONParse('gr_master_settings', null);
+                if (lsSettings && typeof lsSettings === 'object') {
+                    state.settings.meleePricePerCt = Number(lsSettings.meleePricePerCt) || 2400;
+                    state.settings.fancyPricePerCt = Number(lsSettings.fancyPricePerCt) || 700;
+                    state.settings.goldPricesPerGram = lsSettings.goldPricesPerGram || { 10: 200, 14: 233, 18: 280, 19: 290, 22: 320 };
+                    state.settings.platinumPricePerGram = Number(lsSettings.platinumPricePerGram) || 380;
+                    state.settings.silverPricePerGram = Number(lsSettings.silverPricePerGram) || 100;
+                    state.settings.rawCostRates = lsSettings.rawCostRates || { melee: 300, fancy: 380, center: 400 };
+                    
+                    if (!state.settings.centerStones) state.settings.centerStones = { tier1: {}, tier2: {}, tier3: {} };
+                    if (lsSettings.centerStones) {
+                        state.settings.centerStones.tier1 = lsSettings.centerStones.tier1 || { price: 1300 };
+                        state.settings.centerStones.tier2 = lsSettings.centerStones.tier2 || { price: 1200 };
+                        state.settings.centerStones.tier3 = lsSettings.centerStones.tier3 || { price: 1000 };
+                    }
+                } else {
+                    state.settings.centerStones = { tier1: {price:1300}, tier2: {price:1200}, tier3: {price:1000} };
+                }
+            } catch (e) {
+                console.warn("Recovered from deep memory corruption during load.", e);
             }
             state.scrapNotes = localStorage.getItem('gr_scrap_notes') || state.scrapNotes;
         }
@@ -398,8 +434,10 @@
         // --- BRIDAL STACK QUOTE ENGINE ---
         function hasRingData(type, dataSource) {
             const r = dataSource ? dataSource[type] : state.quoteSession[type]; if(!r) return false;
-            const grams = Number(r.goldGrams) || 0; const center = type==='customRing' ? (Number(r.centerStone?.carats) || 0) : 0;
-            const fancy = Number(r.fancyQty) || 0; const melee = (r.melee || []).reduce((sum, m) => sum + (Number(m.qty) || 0), 0);
+            const grams = Number(r.goldGrams) || 0; 
+            const center = type==='customRing' ? (Number(r.centerStone?.carats) || 0) : 0;
+            const fancy = Number(r.fancyQty) || 0; 
+            const melee = (r.melee || []).reduce((sum, m) => sum + (Number(m?.qty) || 0), 0);
             const addon = Number(r.customAddon) || 0;
             return (grams > 0 || center > 0 || fancy > 0 || melee > 0 || addon > 0);
         }
@@ -417,7 +455,7 @@
 
         function calculateSpecificRingCost(type) {
             const r = state.quoteSession[type]; if(!r) return 0;
-            let totalMeleeCts = 0; (r.melee || []).forEach(m => { totalMeleeCts += (Number(m.qty) || 0) * m.carat; });
+            let totalMeleeCts = 0; (r.melee || []).forEach(m => { if(m) totalMeleeCts += (Number(m.qty) || 0) * m.carat; });
             const standardRetailMeleeCost = totalMeleeCts * (state.settings.meleePricePerCt || 2400);
 
             const shapeArr = FANCY_SHAPES[r.fancyShape] || FANCY_SHAPES['Princess'];
@@ -425,7 +463,7 @@
             const retailFancyCost = (Number(r.fancyQty) || 0) * fancyShapeData.carat * (state.settings.fancyPricePerCt || 700);
 
             const grams = Number(r.goldGrams) || 0; let retailMaterialCost = 0;
-            if (r.material === 'gold') retailMaterialCost = grams * (state.settings.goldPricesPerGram[r.goldKarat] || 0);
+            if (r.material === 'gold') retailMaterialCost = grams * ((state.settings.goldPricesPerGram || {})[r.goldKarat] || 0);
             else if (r.material === 'platinum') retailMaterialCost = grams * (state.settings.platinumPricePerGram || 0);
             else if (r.material === 'silver') retailMaterialCost = grams * (state.settings.silverPricePerGram || 0);
 
@@ -465,6 +503,7 @@
                 let totalMeleeCts = 0;
                 
                 (r.melee || []).forEach((m, idx) => {
+                    if(!m) return;
                     const c = (Number(m.qty) || 0) * m.carat; totalMeleeCts += c;
                     const el = document.getElementById(`quote-melee-row-${type}-${idx}`); if (el) el.innerText = c.toFixed(3);
                 });
@@ -522,22 +561,23 @@
             let csv = "";
             if (type === 'scrap') {
                 csv = "Date,Client,Phone,Summary,Total\n";
-                state.scrapTransactions.forEach(t => { csv += `"${t.date}","${t.name}","${t.phone || ''}","${t.summary.replace(/"/g, '""')}","${t.total}"\n`; });
+                (state.scrapTransactions || []).forEach(t => { if(t) csv += `"${t.date || ''}","${t.name || ''}","${t.phone || ''}","${(t.summary||'').replace(/"/g, '""')}","${t.total || 0}"\n`; });
             } else {
                 csv = "Date,Client,Phone,Type,Metal Base,Centerstone,Final Price\n";
-                state.ringQuoteTransactions.forEach(q => {
-                    const d = q.fullData; let baseStr = ''; let centerStr = 'N/A';
-                    if (d.customRing || d.weddingBand || d.mensBand) { // New Bridle Stack Format
+                (state.ringQuoteTransactions || []).forEach(q => {
+                    if(!q) return;
+                    const d = q.fullData || {}; let baseStr = ''; let centerStr = 'N/A';
+                    if (d.customRing || d.weddingBand || d.mensBand) { 
                         const bR = hasRingData('customRing', d) ? `Eng: ${d.customRing.goldGrams}g ${d.customRing.material}` : '';
                         const bW = hasRingData('weddingBand', d) ? `Wed: ${d.weddingBand.goldGrams}g ${d.weddingBand.material}` : '';
                         const bM = hasRingData('mensBand', d) ? `Men: Sz ${d.mensBand.mbSize} | ${d.mensBand.goldGrams}g ${d.mensBand.material}` : '';
                         baseStr = [bR, bW, bM].filter(Boolean).join(' | ');
                         centerStr = hasRingData('customRing', d) ? `${d.customRing.centerStone?.carats || 0}ct ${d.customRing.centerStone?.shape || 'Round'}` : 'N/A';
-                    } else { // Legacy Format Fallback
+                    } else { 
                         baseStr = d.type === 'mens_band' ? `Band Sz ${d.mbSize} | ${d.goldGrams}g ${d.material}` : `${d.goldGrams}g ${d.material}`;
                         centerStr = d.type === 'mens_band' ? 'N/A' : `${d.centerStone?.carats || 0}ct ${d.centerStone?.shape || 'Round'}`;
                     }
-                    csv += `"${q.date}","${q.name}","${q.phone || ''}","Multi-Ring Stack","${baseStr}","${centerStr}","${q.total}"\n`;
+                    csv += `"${q.date || ''}","${q.name || ''}","${q.phone || ''}","Multi-Ring Stack","${baseStr}","${centerStr}","${q.total || 0}"\n`;
                 });
             }
             const blob = new Blob([csv], { type: 'text/csv' }); const url = URL.createObjectURL(blob);
@@ -551,22 +591,25 @@
             if (!confirm("WARNING: Are you sure you want to delete ledger history? Ensure you have exported a backup first!")) return;
 
             let filteredScrap = []; let filteredQuotes = [];
+            const scrapSafe = Array.isArray(state.scrapTransactions) ? state.scrapTransactions : [];
+            const quoteSafe = Array.isArray(state.ringQuoteTransactions) ? state.ringQuoteTransactions : [];
+
             if (range === 'all') { filteredScrap = []; filteredQuotes = []; } 
             else if (range === '365') {
                 const cutoffDate = new Date(); cutoffDate.setDate(cutoffDate.getDate() - 365);
-                filteredScrap = state.scrapTransactions.filter(t => new Date(t.date) > cutoffDate);
-                filteredQuotes = state.ringQuoteTransactions.filter(t => new Date(t.date) > cutoffDate);
+                filteredScrap = scrapSafe.filter(t => t && new Date(t.date) > cutoffDate);
+                filteredQuotes = quoteSafe.filter(t => t && new Date(t.date) > cutoffDate);
             } else if (range === 'custom') {
                 if (!startDateEl || !endDateEl) return alert("Please select both a start and end date for the custom range.");
                 const start = new Date(startDateEl); start.setHours(0,0,0,0);
                 const end = new Date(endDateEl); end.setHours(23,59,59,999);
                 if (start > end) return alert("Start date must be before end date.");
-                filteredScrap = state.scrapTransactions.filter(t => { const tDate = new Date(t.date); return tDate < start || tDate > end; });
-                filteredQuotes = state.ringQuoteTransactions.filter(t => { const tDate = new Date(t.date); return tDate < start || tDate > end; });
+                filteredScrap = scrapSafe.filter(t => { if(!t) return false; const tDate = new Date(t.date); return tDate < start || tDate > end; });
+                filteredQuotes = quoteSafe.filter(t => { if(!t) return false; const tDate = new Date(t.date); return tDate < start || tDate > end; });
             }
 
-            const scrapDeleted = state.scrapTransactions.length - filteredScrap.length;
-            const quotesDeleted = state.ringQuoteTransactions.length - filteredQuotes.length;
+            const scrapDeleted = scrapSafe.length - filteredScrap.length;
+            const quotesDeleted = quoteSafe.length - filteredQuotes.length;
             state.scrapTransactions = filteredScrap; state.ringQuoteTransactions = filteredQuotes;
             localStorage.setItem('gr_scrap_ledger', JSON.stringify(state.scrapTransactions)); localStorage.setItem('gr_quote_ledger', JSON.stringify(state.ringQuoteTransactions));
             render(); alert(`Success! Deleted ${scrapDeleted} Scrap records and ${quotesDeleted} Quote records.`);
@@ -583,6 +626,294 @@
             `;
         }
 
+        function buildScrapHTML() {
+            return `
+                <div class="p-4 md:p-8 bg-white rounded-b-2xl rounded-tr-2xl shadow-lg border border-brand-100 space-y-8 animate-fadeIn">
+                    <div class="relative bg-white rounded-[2rem] py-10 px-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] text-center border border-brand-100/80 overflow-hidden">
+                        <h3 class="text-brand-400 uppercase tracking-[0.2em] text-xs font-bold mb-3">Final Cash Offer (CAD)</h3>
+                        <p id="scrap-grand-total" class="text-6xl md:text-7xl font-black text-green-600 tracking-tighter">$${calculateScrapTotal().toFixed(2)}</p>
+                    </div>
+                    
+                    <div class="space-y-4">
+                        <div class="flex justify-between items-center px-1">
+                            <h3 class="text-xs font-bold text-brand-500 uppercase tracking-widest">Global Valuation Sync</h3>
+                            <button onclick="fetchLivePrices()" class="text-xs bg-brand-800 text-brand-gold px-4 py-1.5 rounded-xl font-bold hover:bg-brand-900 shadow-sm transition-all">Sync Market Rate (${state.syncStatus})</button>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            ${['gold', 'silver', 'platinum'].map(m => `
+                                <div class="bg-brand-50 p-4 rounded-xl border border-brand-200 shadow-sm">
+                                    <label class="text-xs font-bold text-brand-600 uppercase tracking-wider block mb-2">${m.toUpperCase()} (per Oz)</label>
+                                    <input type="number" class="w-full p-2.5 border rounded-xl font-bold text-lg bg-white no-spinner shadow-sm text-brand-900" value="${state.spotPrices[m]}" oninput="state.spotPrices.${m}=Number(this.value); updateScrapUI(); updateSpotUI();" />
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+
+                    <div class="bg-brand-50 p-5 rounded-2xl border border-brand-200/60 space-y-4">
+                        <div class="flex justify-between items-center border-b border-brand-200 pb-2 flex-wrap gap-2">
+                            <h3 class="text-xs font-bold text-brand-600 uppercase tracking-widest">Client Intakes</h3>
+                            <div class="flex items-center gap-3">
+                                ${state.scrapImage ? `<img src="${state.scrapImage}" class="h-8 w-8 object-cover rounded border border-brand-300 shadow-sm" /> <button onclick="state.scrapImage=null; render()" class="text-[10px] text-red-500 font-bold hover:underline">Remove</button>` : ''}
+                                <label class="cursor-pointer text-xs bg-white text-brand-800 border border-brand-200 px-3 py-1.5 rounded-lg font-bold hover:bg-brand-100 transition-all flex items-center gap-1.5 shadow-sm">
+                                    ${ICONS.camera} ${state.scrapImage ? 'Retake ID' : 'Scan ID'}
+                                    <input type="file" accept="image/*" capture="environment" class="hidden" onchange="handleBasicImageUpload(event, 'scrap')" />
+                                </label>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
+                            <input type="text" placeholder="Full Name" class="border p-3 rounded-xl bg-white text-sm text-brand-800 shadow-sm" value="${state.customerName}" oninput="state.customerName=this.value" />
+                            <input type="tel" placeholder="Phone Number" class="border p-3 rounded-xl bg-white text-sm text-brand-800 shadow-sm" value="${state.phoneNumber}" oninput="state.phoneNumber=this.value" />
+                            <input type="text" placeholder="Full Address" class="border p-3 rounded-xl bg-white text-sm md:col-span-2 text-brand-800 shadow-sm" value="${state.address}" oninput="state.address=this.value" />
+                            
+                            <input type="text" placeholder="Driver's License / ID" class="border p-3 rounded-xl bg-white text-sm text-brand-800 shadow-sm" value="${state.driversLicense}" oninput="state.driversLicense=this.value" />
+                            <div class="flex items-center border p-2 rounded-xl bg-white shadow-sm">
+                                <span class="text-[10px] font-bold text-brand-500 uppercase px-2 whitespace-nowrap">Stone Removal (-$5/ea):</span>
+                                <input type="number" class="w-full bg-transparent text-sm font-bold outline-none text-red-600 no-spinner" placeholder="0" value="${state.stoneRemovalQty}" oninput="state.stoneRemovalQty=this.value; updateScrapUI()" />
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-brand-100/50 p-4 md:p-6 rounded-2xl border border-brand-200 space-y-4">
+                        <h3 class="text-xs font-bold text-brand-800 uppercase tracking-widest border-b border-brand-200 pb-2">Scrap Items</h3>
+                        ${state.scrapItems.map((item, idx) => `
+                            <div class="grid grid-cols-1 md:grid-cols-6 gap-3 items-center bg-white p-3 rounded-xl border border-brand-200 shadow-sm">
+                                <input type="number" placeholder="Mass (g)" class="border p-2.5 rounded-xl font-semibold text-sm no-spinner w-full shadow-sm text-brand-900" value="${item.weight}" oninput="state.scrapItems[${idx}].weight=this.value; updateScrapUI()" />
+                                <select class="border p-2.5 rounded-xl text-sm bg-brand-50 font-bold text-brand-800 w-full shadow-sm" onchange="updateScrapMaterial(${idx}, this.value)">
+                                    <option value="gold" ${item.material==='gold'?'selected':''}>Gold</option>
+                                    <option value="silver" ${item.material==='silver'?'selected':''}>Silver</option>
+                                    <option value="platinum" ${item.material==='platinum'?'selected':''}>Platinum</option>
+                                </select>
+                                <select class="border p-2.5 rounded-xl text-sm bg-brand-50 font-bold text-brand-800 w-full shadow-sm" onchange="state.scrapItems[${idx}].purity=Number(this.value); updateScrapUI()">
+                                    ${PURITY_OPTIONS[item.material].map(p=>`<option value="${p}" ${p===item.purity?'selected':''}>${item.material==='gold'? p+'k': p}</option>`).join('')}
+                                </select>
+                                <div class="flex items-center gap-1"><input type="number" class="border p-2.5 rounded-xl text-sm font-semibold text-center w-full shadow-sm text-brand-900" value="${item.rate}" oninput="state.scrapItems[${idx}].rate=this.value; updateScrapUI()" /><span class="text-xs font-bold text-brand-400">%</span></div>
+                                <div id="scrap-row-total-${idx}" class="text-sm font-black text-brand-900 text-right pr-2">$${(((item.weight * (item.material==='gold' ? item.purity/24 : item.purity) * (state.spotPrices[item.material]/TROY_ONCE_GRAMS)) * (item.rate/100)) || 0).toFixed(2)}</div>
+                                <button onclick="removeScrapItem(${idx})" class="text-red-400 hover:text-red-600 font-bold p-1 text-lg text-center hidden md:block">&times;</button>
+                                <button onclick="removeScrapItem(${idx})" class="w-full bg-red-50 text-red-500 font-bold text-xs py-2 rounded-lg md:hidden">Delete Item Entry</button>
+                            </div>
+                        `).join('')}
+                        <button onclick="addScrapItem()" class="w-full border-2 border-dashed border-brand-300 py-3 rounded-xl text-brand-600 font-bold text-sm bg-white hover:bg-brand-50 transition-all">+ Add New Entry Row</button>
+                    </div>
+                    <button onclick="saveScrapTransaction()" class="w-full bg-brand-800 text-brand-gold font-black text-sm tracking-widest uppercase py-4 rounded-xl hover:bg-brand-900 transition-all shadow-md">Commit Payout Log & Save</button>
+                    
+                    <div class="bg-amber-50/60 p-5 rounded-2xl border border-amber-200 shadow-sm mt-6">
+                        <div class="flex justify-between items-center mb-3">
+                            <h3 class="text-xs font-bold text-amber-800 uppercase tracking-widest">Internal Operations Reference Logs</h3>
+                            <button onclick="toggleScrapNotes()" class="text-xs font-semibold text-amber-700 bg-amber-100 border border-amber-200 px-3 py-1 rounded-xl transition-all">
+                                ${state.isEditingNotes ? '🔒 Save & Lock System Logs' : '✏️ Modify Reference Logs'}
+                            </button>
+                        </div>
+                        ${state.isEditingNotes ? 
+                            `<textarea class="w-full p-3 rounded-xl border border-amber-300 bg-white text-sm font-medium focus:ring-2 focus:ring-amber-200 shadow-inner text-amber-900" rows="4" oninput="state.scrapNotes=this.value">${state.scrapNotes}</textarea>` : 
+                            `<div class="whitespace-pre-wrap text-xs text-amber-900 font-medium leading-relaxed bg-amber-50 p-4 rounded-xl border border-amber-100/70">${state.scrapNotes || 'No operative internal metadata guidelines stored.'}</div>`
+                        }
+                    </div>
+                </div>
+            `;
+        }
+
+        function buildSpotHTML() {
+            return `
+                <div class="p-4 md:p-8 bg-white rounded-b-2xl rounded-tr-2xl shadow-lg border border-brand-100 space-y-6 animate-fadeIn">
+                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-brand-50 p-4 rounded-xl border border-brand-200 gap-3 shadow-sm">
+                        <div class="space-y-0.5">
+                            <h3 class="text-xs font-bold text-brand-700 uppercase tracking-wider">Live System Price Engine Metrics</h3>
+                            <p class="text-[11px] text-brand-500 font-medium">Last Confirmed Feed Query Session: <span class="font-bold text-brand-800">${state.lastUpdated}</span></p>
+                        </div>
+                        <button onclick="fetchLivePrices()" class="text-xs bg-brand-800 text-brand-gold px-4 py-2 rounded-xl font-bold hover:bg-brand-900 shadow-md transition-all">Execute Core Synced Feed Update (${state.syncStatus})</button>
+                    </div>
+
+                    <div class="space-y-2">
+                        <h3 class="text-[10px] font-bold text-brand-500 uppercase tracking-widest pl-1">Modify Raw Feed Anchors (per Ounce)</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            ${['gold', 'silver', 'platinum'].map(m => `
+                                <div class="bg-white p-3 rounded-xl border border-brand-200 shadow-sm">
+                                    <label class="text-[10px] font-bold text-brand-500 uppercase block mb-1">${m.toUpperCase()}</label>
+                                    <input type="number" class="w-full p-2 border rounded-lg font-bold bg-brand-50 text-brand-900 text-sm shadow-sm" value="${state.spotPrices[m]}" oninput="state.spotPrices.${m}=Number(this.value); updateScrapUI(); updateSpotUI();" />
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-5 pt-4">
+                        <div class="border border-brand-200 bg-white rounded-2xl p-4 flex flex-col shadow-sm">
+                            <h4 class="font-black text-amber-600 border-b border-brand-100 pb-1.5 mb-2 uppercase tracking-wider text-[11px]">Gold Matrix Breakdown</h4>
+                            <div id="spot-gold-matrix" class="flex-1 max-h-72 overflow-y-auto space-y-1.5 text-xs pr-1"></div>
+                        </div>
+
+                        <div class="border border-brand-200 bg-white rounded-2xl p-4 flex flex-col shadow-sm">
+                            <h4 class="font-black text-brand-500 border-b border-brand-100 pb-1.5 mb-2 uppercase tracking-wider text-[11px]">Silver Matrix Purity Rows</h4>
+                            <div id="spot-silver-matrix" class="space-y-2 text-xs"></div>
+                        </div>
+
+                        <div class="border border-brand-200 bg-white rounded-2xl p-4 flex flex-col shadow-sm">
+                            <h4 class="font-black text-blue-500 border-b border-brand-100 pb-1.5 mb-2 uppercase tracking-wider text-[11px]">Platinum Matrix Arrays</h4>
+                            <div id="spot-plat-matrix" class="space-y-2 text-xs"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-4 bg-brand-900 text-white p-5 rounded-2xl shadow-xl border border-brand-800">
+                        <h3 class="text-xs font-bold text-brand-400 uppercase tracking-widest border-b border-brand-700 pb-2 mb-4">Quick Raw Metal Calculator</h3>
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 items-end text-xs">
+                            <div>
+                                <label class="text-[10px] text-brand-300 font-bold block mb-1 uppercase tracking-wider">Select Metal Purity</label>
+                                <select class="w-full p-3 rounded-xl font-bold bg-brand-800 text-white border border-brand-700 shadow-sm" onchange="state.quickCalcPurity=this.value; updateSpotUI()">
+                                    <option value="gold_10" ${state.quickCalcPurity==='gold_10'?'selected':''}>10k Gold</option>
+                                    <option value="gold_14" ${state.quickCalcPurity==='gold_14'?'selected':''}>14k Gold</option>
+                                    <option value="gold_18" ${state.quickCalcPurity==='gold_18'?'selected':''}>18k Gold</option>
+                                    <option value="gold_19" ${state.quickCalcPurity==='gold_19'?'selected':''}>19k Gold</option>
+                                    <option value="gold_22" ${state.quickCalcPurity==='gold_22'?'selected':''}>22k Gold</option>
+                                    <option value="gold_24" ${state.quickCalcPurity==='gold_24'?'selected':''}>24k Gold</option>
+                                    <option value="silver_925" ${state.quickCalcPurity==='silver_925'?'selected':''}>.925 Silver</option>
+                                    <option value="silver_999" ${state.quickCalcPurity==='silver_999'?'selected':''}>.999 Silver</option>
+                                    <option value="platinum_950" ${state.quickCalcPurity==='platinum_950'?'selected':''}>.950 Platinum</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="text-[10px] text-brand-300 font-bold block mb-1 uppercase tracking-wider">Input Grams</label>
+                                <input type="number" class="w-full p-3 rounded-xl font-bold bg-brand-800 text-white border border-brand-700 shadow-sm" placeholder="0.00" value="${state.quickCalcGrams}" oninput="state.quickCalcGrams=this.value; updateSpotUI()" />
+                            </div>
+                            <div class="bg-green-900/30 p-2.5 rounded-xl border border-green-800 text-center">
+                                <span class="text-[10px] text-green-400 uppercase tracking-widest block mb-0.5">Total Raw Cost</span>
+                                <span id="spot-quick-total" class="text-xl font-black text-green-400">$${calculateQuickRawCost()}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                ${(setTimeout(updateSpotUI, 0), '')}
+            `;
+        }
+
+        function buildSettingsHTML() {
+            return `
+                <div class="p-6 md:p-8 bg-white rounded-b-2xl rounded-tr-2xl shadow-lg border border-brand-100 space-y-6 animate-fadeIn">
+                    <div class="flex justify-between items-center border-b border-brand-200 pb-4">
+                        <h2 class="font-serif text-2xl italic font-bold text-brand-900">Operational Default Pricing Profiles</h2>
+                        <button id="save-settings-btn" onclick="saveSystemSettings()" class="bg-brand-800 text-brand-gold font-bold py-2.5 px-6 rounded-xl hover:bg-brand-900 shadow-md text-xs md:text-sm transition-all uppercase tracking-wider">Save Default Settings</button>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="bg-brand-50 p-5 rounded-2xl border border-brand-200 space-y-4 shadow-sm">
+                            <h3 class="text-xs font-bold text-brand-700 uppercase tracking-widest border-b border-brand-200 pb-2">Consumer Stone Markups (per Ct)</h3>
+                            <div class="grid grid-cols-2 gap-4">
+                                <div><label class="text-[10px] font-bold text-brand-500 block mb-1 uppercase">Standard Melee</label><input type="number" class="border p-2.5 rounded-xl w-full font-bold bg-white text-brand-900 shadow-sm" value="${state.settings.meleePricePerCt}" oninput="state.settings.meleePricePerCt=Number(this.value); saveSystemSettings();" /></div>
+                                <div><label class="text-[10px] font-bold text-brand-500 block mb-1 uppercase">Fancy Shaped</label><input type="number" class="border p-2.5 rounded-xl w-full font-bold bg-white text-brand-900 shadow-sm" value="${state.settings.fancyPricePerCt}" oninput="state.settings.fancyPricePerCt=Number(this.value); saveSystemSettings();" /></div>
+                            </div>
+                            <div class="pt-3 space-y-2">
+                                <h4 class="text-[10px] font-bold text-brand-500 uppercase tracking-wider">Center Stone Retails</h4>
+                                <div class="grid grid-cols-3 gap-3">
+                                    <div><label class="text-[9px] text-brand-500 font-bold block mb-1 uppercase">1-2ct</label><input type="number" class="border p-2 rounded-lg w-full text-xs font-bold bg-white text-brand-900 shadow-sm" value="${state.settings.centerStones?.tier1?.price || ''}" oninput="state.settings.centerStones.tier1={price:Number(this.value)}; saveSystemSettings();" /></div>
+                                    <div><label class="text-[9px] text-brand-500 font-bold block mb-1 uppercase">2-3ct</label><input type="number" class="border p-2 rounded-lg w-full text-xs font-bold bg-white text-brand-900 shadow-sm" value="${state.settings.centerStones?.tier2?.price || ''}" oninput="state.settings.centerStones.tier2={price:Number(this.value)}; saveSystemSettings();" /></div>
+                                    <div><label class="text-[9px] text-brand-500 font-bold block mb-1 uppercase">3-5ct</label><input type="number" class="border p-2 rounded-lg w-full text-xs font-bold bg-white text-brand-900 shadow-sm" value="${state.settings.centerStones?.tier3?.price || ''}" oninput="state.settings.centerStones.tier3={price:Number(this.value)}; saveSystemSettings();" /></div>
+                                </div>
+                            </div>
+                            
+                            <div class="pt-5 border-t border-brand-200 space-y-2">
+                                <h3 class="text-xs font-bold text-brand-700 uppercase tracking-widest mb-2">Internal Core Wholesale Cost Rates</h3>
+                                <div class="grid grid-cols-3 gap-3">
+                                    <div><label class="text-[9px] text-brand-500 font-bold block mb-1 uppercase">Melee (/ct)</label><input type="number" class="border p-2 rounded-lg w-full text-xs font-bold bg-white text-brand-900 shadow-sm" value="${state.settings.rawCostRates.melee}" oninput="state.settings.rawCostRates.melee=Number(this.value); saveSystemSettings();" /></div>
+                                    <div><label class="text-[9px] text-brand-500 font-bold block mb-1 uppercase">Fancy (/ct)</label><input type="number" class="border p-2 rounded-lg w-full text-xs font-bold bg-white text-brand-900 shadow-sm" value="${state.settings.rawCostRates.fancy}" oninput="state.settings.rawCostRates.fancy=Number(this.value); saveSystemSettings();" /></div>
+                                    <div><label class="text-[9px] text-brand-500 font-bold block mb-1 uppercase">Center (/ct)</label><input type="number" class="border p-2 rounded-lg w-full text-xs font-bold bg-white text-brand-900 shadow-sm" value="${state.settings.rawCostRates.center}" oninput="state.settings.rawCostRates.center=Number(this.value); saveSystemSettings();" /></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="bg-brand-50 p-5 rounded-2xl border border-brand-200 space-y-4 shadow-sm">
+                            <h3 class="text-xs font-bold text-brand-700 uppercase tracking-widest border-b border-brand-200 pb-2">Ring Metal Rates (per Gram)</h3>
+                            <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
+                                ${[10, 14, 18, 19, 22].map(k => `
+                                    <div>
+                                        <label class="text-[9px] font-bold text-brand-500 block mb-1 uppercase">${k}k Gold</label>
+                                        <input type="number" class="border p-2 rounded-xl w-full text-xs font-bold bg-white text-brand-900 shadow-sm" value="${state.settings.goldPricesPerGram[k] || ''}" oninput="state.settings.goldPricesPerGram[${k}]=Number(this.value); saveSystemSettings();" />
+                                    </div>
+                                `).join('')}
+                            </div>
+                            <div class="grid grid-cols-2 gap-4 pt-4 border-t border-brand-200">
+                                <div><label class="text-[10px] font-bold text-brand-500 block mb-1 uppercase">Platinum</label><input type="number" class="border p-2.5 rounded-xl w-full text-xs font-bold bg-white text-brand-900 shadow-sm" value="${state.settings.platinumPricePerGram}" oninput="state.settings.platinumPricePerGram=Number(this.value); saveSystemSettings();" /></div>
+                                <div><label class="text-[10px] font-bold text-brand-500 block mb-1 uppercase">Silver Base</label><input type="number" class="border p-2.5 rounded-xl w-full text-xs font-bold bg-white text-brand-900 shadow-sm" value="${state.settings.silverPricePerGram}" oninput="state.settings.silverPricePerGram=Number(this.value); saveSystemSettings();" /></div>
+                            </div>
+                        </div>
+                        
+                        <div class="bg-red-50/50 p-5 rounded-2xl border border-red-100 space-y-4 md:col-span-2 mt-2">
+                            <h3 class="text-xs font-bold text-red-800 uppercase tracking-widest border-b border-red-200 pb-2">Data Operations & Ledger Management</h3>
+                            <div class="flex flex-col md:flex-row gap-4 items-end">
+                                <div class="flex-1 w-full space-y-2">
+                                    <button onclick="exportCSV('scrap')" class="w-full bg-white border border-red-200 text-red-700 font-bold py-2.5 rounded-xl hover:bg-red-50 transition-all text-[10px] uppercase tracking-wider shadow-sm">⬇️ Export Scrap (.csv)</button>
+                                    <button onclick="exportCSV('quote')" class="w-full bg-white border border-red-200 text-red-700 font-bold py-2.5 rounded-xl hover:bg-red-50 transition-all text-[10px] uppercase tracking-wider shadow-sm">⬇️ Export Quotes (.csv)</button>
+                                </div>
+                                <div class="flex-1 w-full space-y-1">
+                                    <label class="text-[10px] font-bold text-red-500 uppercase tracking-wider pl-1">Target Deletion Scope</label>
+                                    <select id="clear-history-range" class="border border-red-200 p-2.5 rounded-xl w-full text-xs font-bold bg-white text-brand-800 shadow-sm">
+                                        <option value="365">Purge Records > 365 Days Old</option>
+                                        <option value="custom">Specific Range (Requires Dates Below)</option>
+                                        <option value="all">Wipe All Historical Databases</option>
+                                    </select>
+                                </div>
+                                <div class="flex-1 w-full space-y-1">
+                                    <label class="text-[10px] font-bold text-red-500 uppercase tracking-wider pl-1">Target Start</label>
+                                    <input type="date" id="clear-start-date" class="border border-red-200 p-2.5 rounded-xl w-full text-xs font-bold bg-white text-brand-800 shadow-sm" />
+                                </div>
+                                <div class="flex-1 w-full space-y-1">
+                                    <label class="text-[10px] font-bold text-red-500 uppercase tracking-wider pl-1">Target End</label>
+                                    <input type="date" id="clear-end-date" class="border border-red-200 p-2.5 rounded-xl w-full text-xs font-bold bg-white text-brand-800 shadow-sm" />
+                                </div>
+                                <div class="flex-1 w-full">
+                                    <button onclick="clearHistory()" class="w-full bg-red-600 text-white font-bold py-2.5 px-4 rounded-xl hover:bg-red-700 shadow-md transition-all text-xs uppercase tracking-wider">🗑️ Execute Purge</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function buildLedgerHTML() {
+            return `
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 animate-fadeIn text-xs">
+                    <div class="p-5 bg-white rounded-2xl shadow-lg border border-brand-100">
+                        <h2 class="text-sm font-black mb-4 text-brand-800 uppercase tracking-wider border-b border-brand-100 pb-2">Scrap Payout History Ledger</h2>
+                        ${state.scrapTransactions.length === 0 ? '<p class="text-center text-brand-400 py-12 font-bold uppercase tracking-wider">No purchases filed for current lifecycle.</p>' : `
+                            <div class="space-y-3 max-h-[450px] overflow-y-auto pr-1">
+                                ${state.scrapTransactions.map((t, idx) => {
+                                    if(!t) return '';
+                                    return `
+                                    <div onclick="showScrapDetails(${idx})" class="p-3 bg-brand-50 rounded-xl border border-brand-200 flex justify-between items-center shadow-sm cursor-pointer hover:bg-green-50 hover:border-green-200 transition-colors">
+                                        <div class="space-y-1"><p class="font-bold text-brand-900 text-sm">${t.name}</p><p class="text-[10px] text-brand-500 uppercase tracking-wide">${t.date} • ${t.summary}</p></div>
+                                        <span class="font-black text-green-600 text-sm">$${t.total}</span>
+                                    </div>
+                                `}).join('')}
+                            </div>
+                        `}
+                    </div>
+
+                    <div class="p-5 bg-white rounded-2xl shadow-lg border border-brand-100">
+                        <h2 class="text-sm font-black mb-4 text-brand-800 uppercase tracking-wider border-b border-brand-100 pb-2">Ring Consultation Quotation Ledger</h2>
+                        ${state.ringQuoteTransactions.length === 0 ? '<p class="text-center text-brand-400 py-12 font-bold uppercase tracking-wider">No retail ring layouts profiled yet.</p>' : `
+                            <div class="space-y-3 max-h-[450px] overflow-y-auto pr-1">
+                                ${state.ringQuoteTransactions.map((q, idx) => {
+                                    if(!q) return '';
+                                    return `
+                                    <div onclick="showQuoteDetails(${idx})" class="p-3 bg-brand-50 rounded-xl border border-brand-200 flex justify-between items-center shadow-sm cursor-pointer hover:bg-brand-100 transition-colors">
+                                        <div class="space-y-1"><p class="font-bold text-brand-900 text-sm">${q.name}</p><p class="text-[10px] text-brand-500 uppercase tracking-wide">${q.date} • ${q.summary}</p></div>
+                                        <span class="font-black text-brand-800 text-sm">${q.total}</span>
+                                    </div>
+                                `}).join('')}
+                            </div>
+                        `}
+                    </div>
+                </div>
+            `;
+        }
+
+        function buildBabyRingsHTML() {
+            return `
+                <div class="p-16 text-center bg-white rounded-b-2xl rounded-tr-2xl shadow-lg border-2 border-dashed border-brand-200 animate-fadeIn">
+                     <h3 class="font-serif text-3xl italic font-bold text-brand-900 mb-2">Baby Rings Module Workspace</h3>
+                     <p class="text-xs text-brand-500 uppercase tracking-widest font-bold max-w-md mx-auto">This architectural node is partitioned safely to prevent configuration collision parameters during future functional additions.</p>
+                </div>
+            `;
+        }
+
         function buildRingHTML(type) {
             const r = state.quoteSession[type]; if(!r) return '';
             const shapeOpts = Object.keys(FANCY_SHAPES);
@@ -590,9 +921,9 @@
 
             const cadBlock = type === 'mensBand' ? `
                 <div class="grid grid-cols-3 gap-3 border-t border-brand-200 pt-4 mt-2">
-                    <div><label class="text-[10px] font-bold text-brand-500 uppercase block mb-1">US Size</label><input type="number" class="border p-2.5 rounded-xl w-full font-bold text-sm bg-white shadow-sm" placeholder="e.g., 9" value="${r.mbSize}" oninput="state.quoteSession.mensBand.mbSize=this.value; updateQuoteTotals()" /></div>
-                    <div><label class="text-[10px] font-bold text-brand-500 uppercase block mb-1">Width (mm)</label><input type="number" class="border p-2.5 rounded-xl w-full font-bold text-sm bg-white shadow-sm" placeholder="(mm)" value="${r.mbWidth}" oninput="state.quoteSession.mensBand.mbWidth=this.value; updateQuoteTotals()" /></div>
-                    <div><label class="text-[10px] font-bold text-brand-500 uppercase block mb-1">Thick (mm)</label><input type="number" class="border p-2.5 rounded-xl w-full font-bold text-sm bg-white shadow-sm" placeholder="(mm)" value="${r.mbThickness}" oninput="state.quoteSession.mensBand.mbThickness=this.value; updateQuoteTotals()" /></div>
+                    <div><label class="text-[10px] font-bold text-brand-500 uppercase block mb-1">US Size</label><input type="number" class="border p-2.5 rounded-xl w-full font-bold text-sm bg-white shadow-sm placeholder-brand-300" placeholder="e.g., 9" value="${r.mbSize}" oninput="state.quoteSession.mensBand.mbSize=this.value; updateQuoteTotals()" /></div>
+                    <div><label class="text-[10px] font-bold text-brand-500 uppercase block mb-1">Width (mm)</label><input type="number" class="border p-2.5 rounded-xl w-full font-bold text-sm bg-white shadow-sm placeholder-brand-300" placeholder="(mm)" value="${r.mbWidth}" oninput="state.quoteSession.mensBand.mbWidth=this.value; updateQuoteTotals()" /></div>
+                    <div><label class="text-[10px] font-bold text-brand-500 uppercase block mb-1">Thick (mm)</label><input type="number" class="border p-2.5 rounded-xl w-full font-bold text-sm bg-white shadow-sm placeholder-brand-300" placeholder="(mm)" value="${r.mbThickness}" oninput="state.quoteSession.mensBand.mbThickness=this.value; updateQuoteTotals()" /></div>
                 </div>
                 <div class="bg-brand-50 p-3 rounded-xl border border-brand-200 mt-4 text-center">
                     <span class="text-[10px] font-bold text-brand-600 uppercase block mb-1">Calculated Raw Weight</span>
@@ -601,29 +932,29 @@
             ` : `
                 <div>
                     <label class="text-[10px] font-bold text-brand-500 uppercase block mb-1">Finished Structural Weight (Grams)</label>
-                    <input type="number" class="border p-3 rounded-xl w-full font-bold text-sm bg-white shadow-sm" placeholder="0.00g" value="${r.goldGrams}" oninput="state.quoteSession.${type}.goldGrams=this.value; updateQuoteTotals()" />
+                    <input type="number" class="border p-3 rounded-xl w-full font-bold text-sm bg-white shadow-sm placeholder-brand-300" placeholder="0.00g" value="${r.goldGrams}" oninput="state.quoteSession.${type}.goldGrams=this.value; updateQuoteTotals()" />
                 </div>
                 <div class="grid grid-cols-3 gap-3 border-t border-brand-200 pt-4 mt-5">
-                    <div><label class="text-[10px] font-bold text-brand-500 uppercase block mb-1">US Size</label><input type="number" class="border p-2.5 rounded-xl w-full font-bold text-sm bg-white shadow-sm placeholder-brand-300" placeholder="e.g., 7.5" value="${r.cRingSize || ''}" oninput="state.quoteSession.${type}.cRingSize=this.value" /></div>
-                    <div><label class="text-[10px] font-bold text-brand-500 uppercase block mb-1">Width (mm)</label><input type="number" class="border p-2.5 rounded-xl w-full font-bold text-sm bg-white shadow-sm placeholder-brand-300" placeholder="(mm)" value="${r.cBandWidth || ''}" oninput="state.quoteSession.${type}.cBandWidth=this.value" /></div>
-                    <div><label class="text-[10px] font-bold text-brand-500 uppercase block mb-1">Thick (mm)</label><input type="number" class="border p-2.5 rounded-xl w-full font-bold text-sm bg-white shadow-sm placeholder-brand-300" placeholder="(mm)" value="${r.cBandThickness || ''}" oninput="state.quoteSession.${type}.cBandThickness=this.value" /></div>
+                    <div><label class="text-[10px] font-bold text-brand-500 uppercase block mb-1">US Size</label><input type="number" class="border p-2.5 rounded-xl w-full font-bold text-sm bg-white shadow-sm placeholder-brand-300 text-brand-600" placeholder="e.g., 7.5" value="${r.cRingSize || ''}" oninput="state.quoteSession.${type}.cRingSize=this.value" /></div>
+                    <div><label class="text-[10px] font-bold text-brand-500 uppercase block mb-1">Width (mm)</label><input type="number" class="border p-2.5 rounded-xl w-full font-bold text-sm bg-white shadow-sm placeholder-brand-300 text-brand-600" placeholder="(mm)" value="${r.cBandWidth || ''}" oninput="state.quoteSession.${type}.cBandWidth=this.value" /></div>
+                    <div><label class="text-[10px] font-bold text-brand-500 uppercase block mb-1">Thick (mm)</label><input type="number" class="border p-2.5 rounded-xl w-full font-bold text-sm bg-white shadow-sm placeholder-brand-300 text-brand-600" placeholder="(mm)" value="${r.cBandThickness || ''}" oninput="state.quoteSession.${type}.cBandThickness=this.value" /></div>
                 </div>
             `;
 
             const centerBlock = type === 'customRing' ? `
                 <div class="bg-white p-5 rounded-2xl border border-brand-200 shadow-sm mt-5 relative overflow-hidden">
-                    <div class="absolute top-0 left-0 w-1 h-full bg-brand-gold"></div>
+                    <div class="absolute top-0 left-0 w-1.5 h-full bg-brand-gold"></div>
                     <h3 class="text-xs font-bold text-brand-700 uppercase tracking-widest border-b border-brand-100 pb-2 mb-4">Centerstone Profile</h3>
                     <div class="flex gap-4">
                         <div class="w-1/2">
                             <label class="text-[10px] font-bold text-brand-500 uppercase block mb-1">Shape / Cut</label>
-                            <select class="border p-3 rounded-xl w-full text-sm font-bold bg-brand-50 shadow-sm" onchange="state.quoteSession.customRing.centerStone.shape=this.value; updateQuoteTotals()">
+                            <select class="border p-3 rounded-xl w-full text-sm font-bold bg-brand-50 shadow-sm text-brand-800" onchange="state.quoteSession.customRing.centerStone.shape=this.value; updateQuoteTotals()">
                                 ${CENTER_SHAPES.map(s => `<option value="${s}" ${r.centerStone?.shape === s ? 'selected' : ''}>${s}</option>`).join('')}
                             </select>
                         </div>
                         <div class="w-1/2">
                             <label class="text-[10px] font-bold text-brand-500 uppercase block mb-1">Total Carat Weight</label>
-                            <input type="number" class="border p-3 rounded-xl w-full text-sm font-bold bg-brand-50 shadow-sm" placeholder="0.00 ct" value="${r.centerStone?.carats || ''}" oninput="state.quoteSession.customRing.centerStone.carats=this.value; updateQuoteTotals()" />
+                            <input type="number" class="border p-3 rounded-xl w-full text-sm font-bold bg-brand-50 shadow-sm text-brand-800 placeholder-brand-300" placeholder="0.00 ct" value="${r.centerStone?.carats || ''}" oninput="state.quoteSession.customRing.centerStone.carats=this.value; updateQuoteTotals()" />
                         </div>
                     </div>
                 </div>
@@ -632,25 +963,27 @@
             return `
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 animate-fadeIn mt-6">
                     <div class="space-y-4">
-                        <div class="border-b border-brand-200 pb-2"><h3 class="font-serif text-lg italic font-bold text-brand-800">Melee Configuration</h3></div>
+                        <div class="border-b border-brand-200 pb-2"><h3 class="font-serif text-xl italic font-bold text-brand-800">Melee Configuration</h3></div>
                         <div class="bg-white rounded-2xl border border-brand-200 overflow-hidden text-xs shadow-sm">
                             <div class="grid grid-cols-[2fr_1fr_1fr_1fr_auto] bg-brand-50 font-bold text-brand-600 text-[10px] uppercase p-3 border-b border-brand-200 gap-2">
                                 <div>Dimension</div><div>Carats</div><div>Qty</div><div class="text-right">Sum</div><div></div>
                             </div>
                             <div class="max-h-80 overflow-y-auto divide-y divide-brand-100">
-                                ${(r.melee || []).map((m, idx) => `
+                                ${(r.melee || []).map((m, idx) => {
+                                    if(!m) return '';
+                                    return `
                                     <div class="grid grid-cols-[2fr_1fr_1fr_1fr_auto] items-center p-2 hover:bg-brand-50/50 transition-colors gap-2">
                                         <div>
-                                            <select class="border p-2 rounded-lg w-full font-bold bg-white text-brand-800" onchange="updateMeleeSize('${type}', ${idx}, this.value)">
+                                            <select class="border p-2 rounded-lg w-full font-bold bg-white text-brand-800 shadow-sm" onchange="updateMeleeSize('${type}', ${idx}, this.value)">
                                                 ${Object.keys(ROUND_MELEE).map(sz => `<option value="${sz}" ${m.size === sz ? 'selected' : ''}>${sz}mm</option>`).join('')}
                                             </select>
                                         </div>
-                                        <div id="melee-carat-${type}-${idx}" class="text-brand-500 font-mono text-center">${m.carat.toFixed(3)}</div>
+                                        <div id="melee-carat-${type}-${idx}" class="text-brand-500 font-mono text-center">${(m.carat||0).toFixed(3)}</div>
                                         <div><input type="number" placeholder="0" class="border p-2 rounded-lg w-full text-center no-spinner font-semibold bg-white shadow-sm" value="${m.qty}" oninput="updateMeleeQty('${type}', ${idx}, this.value)" /></div>
                                         <div id="quote-melee-row-${type}-${idx}" class="text-right font-semibold text-brand-700">0.000</div>
                                         <div class="text-center"><button onclick="removeMeleeRow('${type}', ${idx})" class="text-red-400 font-bold px-2 hover:text-red-600 text-lg">&times;</button></div>
                                     </div>
-                                `).join('')}
+                                `}).join('')}
                             </div>
                             <div class="p-3 border-t border-brand-100 bg-brand-50 text-center">
                                 <button onclick="addMeleeRow('${type}')" class="text-[10px] uppercase tracking-wider font-bold text-brand-700 bg-white border border-brand-200 px-5 py-2.5 rounded-lg hover:border-brand-gold hover:text-brand-gold transition-all shadow-sm">+ Add Round Stone Line</button>
@@ -664,12 +997,12 @@
                                     <select class="border p-2.5 rounded-xl w-full text-xs font-medium text-brand-600 bg-white shadow-sm" onchange="state.quoteSession.${type}.fancySizeIdx=Number(this.value); updateQuoteTotals(); render()">
                                         ${activeShapeArray.map((sz, idx) => `<option value="${idx}" ${r.fancySizeIdx===idx?'selected':''}>${sz.label}</option>`).join('')}
                                     </select>
-                                    <input type="number" placeholder="Units" class="border p-2.5 rounded-xl w-full text-center no-spinner font-semibold bg-white text-sm shadow-sm" value="${r.fancyQty}" oninput="state.quoteSession.${type}.fancyQty=this.value; updateQuoteTotals()" />
+                                    <input type="number" placeholder="Units" class="border p-2.5 rounded-xl w-full text-center no-spinner font-semibold bg-white text-sm shadow-sm placeholder-brand-300" value="${r.fancyQty}" oninput="state.quoteSession.${type}.fancyQty=this.value; updateQuoteTotals()" />
                                     <div id="quote-fancy-row-total-${type}" class="text-right font-black text-brand-800 pr-2">0.000</div>
                                 </div>
                             </div>
                         </div>
-                        <div class="p-4 bg-brand-800 rounded-xl flex justify-between items-center shadow-md">
+                        <div class="p-4 bg-brand-800 rounded-xl flex justify-between items-center shadow-md border border-brand-700">
                             <div class="text-xs font-bold text-brand-300 uppercase tracking-wider">Total Melee Carats</div>
                             <div class="text-right"><span id="quote-total-melee-cts-${type}" class="text-2xl font-black text-brand-gold">0.000</span> <span class="text-xs font-bold text-brand-400">cts</span></div>
                         </div>
@@ -677,9 +1010,9 @@
 
                     <div class="space-y-5">
                         <div class="bg-white p-5 rounded-2xl border border-brand-200 shadow-sm space-y-4 relative overflow-hidden">
-                            <div class="absolute top-0 left-0 w-1 h-full bg-brand-600"></div>
+                            <div class="absolute top-0 left-0 w-1.5 h-full bg-brand-600"></div>
                             <div class="flex justify-between border-b border-brand-100 pb-3">
-                                <h3 class="font-serif text-lg italic font-bold text-brand-800">Structural Metal</h3>
+                                <h3 class="font-serif text-xl italic font-bold text-brand-800">Structural Metal</h3>
                                 <div id="quote-ring-total-${type}" class="text-lg font-black text-brand-900">$0.00</div>
                             </div>
                             <div class="grid grid-cols-2 gap-4">
@@ -695,7 +1028,7 @@
                                 <div>
                                     <label class="text-[10px] font-bold text-brand-500 uppercase block mb-1">Purity Tier</label>
                                     <select class="border p-3 rounded-xl w-full text-sm font-bold text-brand-800 bg-brand-50 shadow-sm" onchange="state.quoteSession.${type}.goldKarat=Number(this.value); updateQuoteTotals()">
-                                        ${Object.keys(state.settings.goldPricesPerGram).map(k => `<option value="${k}" ${Number(k)===r.goldKarat?'selected':''}>${k}k Premium</option>`).join('')}
+                                        ${Object.keys(state.settings.goldPricesPerGram || {}).map(k => `<option value="${k}" ${Number(k)===r.goldKarat?'selected':''}>${k}k Premium</option>`).join('')}
                                     </select>
                                 </div>
                                 ` : '<div></div>'}
@@ -705,9 +1038,9 @@
 
                         ${centerBlock}
 
-                        <div class="bg-white p-5 rounded-2xl border border-brand-200 shadow-sm space-y-4 relative overflow-hidden">
-                            <div class="absolute top-0 left-0 w-1 h-full bg-brand-400"></div>
-                            <div><h3 class="text-xs font-bold text-brand-700 uppercase tracking-widest border-b border-brand-100 pb-2 mb-3">Addons & Extras</h3><input type="number" class="border p-3 rounded-xl w-full font-bold text-sm bg-brand-50 shadow-sm text-brand-900" placeholder="$0.00 Addon Amount" value="${r.customAddon}" oninput="state.quoteSession.${type}.customAddon=this.value; updateQuoteTotals()" /></div>
+                        <div class="bg-white p-5 rounded-2xl border border-brand-200 shadow-sm space-y-4 relative overflow-hidden mt-5">
+                            <div class="absolute top-0 left-0 w-1.5 h-full bg-brand-400"></div>
+                            <div><h3 class="text-xs font-bold text-brand-700 uppercase tracking-widest border-b border-brand-100 pb-2 mb-3">Addons & Extras</h3><input type="number" class="border p-3 rounded-xl w-full font-bold text-sm bg-brand-50 shadow-sm text-brand-900 placeholder-brand-400" placeholder="$0.00 Addon Amount" value="${r.customAddon}" oninput="state.quoteSession.${type}.customAddon=this.value; updateQuoteTotals()" /></div>
                         </div>
                     </div>
                 </div>
@@ -810,60 +1143,45 @@
                         <button onclick="saveRingQuote()" class="w-full bg-brand-800 text-brand-gold p-4 rounded-xl font-black text-sm uppercase tracking-[0.1em] shadow-lg hover:bg-brand-900 transition-all border border-brand-700">Save Consultation to Ledger</button>
                     </div>
                 </div>
-
-                ${state.isSketching ? `
-                    <div class="fixed inset-0 bg-brand-100 z-[100] flex flex-col animate-fadeIn">
-                        <div class="flex justify-between items-center p-4 bg-brand-900 text-white shadow-md z-10 border-b border-brand-800">
-                            <h3 class="font-bold tracking-widest uppercase text-sm text-brand-gold">Design Sketchpad</h3>
-                            <div class="flex gap-3 items-center">
-                                <button onclick="clearSketch()" class="text-xs text-red-400 font-bold hover:text-red-300 px-3">Clear</button>
-                                <button onclick="closeSketcher()" class="text-xs text-brand-300 font-bold hover:text-white px-3 border-r border-brand-700 pr-5">Cancel</button>
-                                <button onclick="saveSketch()" class="text-xs bg-brand-gold text-brand-900 hover:bg-brand-goldHover px-5 py-2 rounded-lg font-black transition-all shadow-sm">Save</button>
-                            </div>
-                        </div>
-                        
-                        <div class="flex-1 relative overflow-hidden bg-white cursor-crosshair" id="sketch-container">
-                            <img id="sketch-bg" style="display: none; position: absolute; pointer-events: none;" />
-                            <div id="transform-box">
-                                <div id="handle-rotate" class="transform-handle">${ICONS.rotate}</div>
-                                <div id="handle-scale" class="transform-handle">${ICONS.scale}</div>
-                            </div>
-                            <canvas id="sketch-canvas" class="absolute inset-0 w-full h-full touch-none"></canvas>
-                        </div>
-
-                        <div class="absolute bottom-6 left-1/2 -translate-x-1/2 bg-white/95 backdrop-blur-xl px-4 py-3 rounded-2xl shadow-2xl border border-brand-200 flex flex-wrap justify-center gap-4 sm:gap-6 items-center z-20 w-[90%] sm:w-auto">
-                            <div class="flex gap-2 border-r pr-4 sm:pr-6 border-brand-200 text-brand-500">
-                                <button id="tool-pen" onclick="setSketchTool('pen')" class="p-2.5 bg-brand-gold/10 text-brand-gold rounded-xl shadow-inner border-2 border-brand-gold transition-all" title="Pen Tool">${ICONS.pen}</button>
-                                <button id="tool-highlighter" onclick="setSketchTool('highlighter')" class="p-2.5 bg-transparent hover:bg-brand-50 rounded-xl border-2 border-transparent transition-all" title="Highlighter">${ICONS.highlighter}</button>
-                                <button id="tool-eraser" onclick="setSketchTool('eraser')" class="p-2.5 bg-transparent hover:bg-brand-50 rounded-xl border-2 border-transparent transition-all" title="Eraser">${ICONS.eraser}</button>
-                                <button id="tool-transform" onclick="setSketchTool('transform')" class="p-2.5 bg-transparent hover:bg-brand-50 rounded-xl border-2 border-transparent transition-all" title="Move & Scale Image">${ICONS.transform}</button>
-                            </div>
-                            <div class="flex flex-col gap-1 border-r pr-4 sm:pr-6 border-brand-200 items-center justify-center min-w-[80px]">
-                                <label class="cursor-pointer text-[10px] font-bold text-brand-700 bg-brand-100 px-3 py-1.5 rounded-lg hover:bg-brand-200 transition-all text-center flex items-center gap-1.5 shadow-sm">${ICONS.camera} Photo<input type="file" accept="image/*" class="hidden" onchange="handleSketchBgUpload(event)" /></label>
-                            </div>
-                            <div class="flex gap-2 sm:gap-3 border-r pr-4 sm:pr-6 border-brand-200">
-                                <button id="color-slate" onclick="setSketchColor('#1e293b', 'slate')" class="w-6 h-6 sm:w-8 sm:h-8 rounded-full bg-brand-800 border-2 border-brand-400 shadow-md scale-110 transition-all"></button>
-                                <button id="color-gold" onclick="setSketchColor('#d4af37', 'gold')" class="w-6 h-6 sm:w-8 sm:h-8 rounded-full bg-brand-gold border-2 border-transparent shadow-sm scale-100 transition-all"></button>
-                                <button id="color-red" onclick="setSketchColor('#dc2626', 'red')" class="w-6 h-6 sm:w-8 sm:h-8 rounded-full bg-red-600 border-2 border-transparent shadow-sm scale-100 transition-all"></button>
-                                <button id="color-green" onclick="setSketchColor('#16a34a', 'green')" class="w-6 h-6 sm:w-8 sm:h-8 rounded-full bg-green-600 border-2 border-transparent shadow-sm scale-100 transition-all"></button>
-                                <button id="color-yellow" onclick="setSketchColor('#facc15', 'yellow')" class="w-6 h-6 sm:w-8 sm:h-8 rounded-full bg-yellow-400 border-2 border-transparent shadow-sm scale-100 transition-all"></button>
-                            </div>
-                            <div class="flex gap-3 sm:gap-4 items-center pl-2">
-                                <button id="thick-1" onclick="setSketchThickness(1.5, 1)" class="w-3.5 h-3.5 bg-brand-300 rounded-full hover:bg-brand-500 transition-all shadow-none"></button>
-                                <button id="thick-2" onclick="setSketchThickness(3.0, 2)" class="w-5 h-5 bg-brand-gold rounded-full shadow-md transition-all"></button>
-                                <button id="thick-3" onclick="setSketchThickness(6.0, 3)" class="w-7 h-7 bg-brand-300 rounded-full hover:bg-brand-500 transition-all shadow-none"></button>
-                            </div>
-                        </div>
-                    </div>
-                ` : ''}
             `;
         }
 
-        // --- MODAL CONTROLLERS ---
+        function showScrapDetails(idx) {
+            const t = state.scrapTransactions[idx];
+            if (!t) return;
+            const modal = document.getElementById('modal-backdrop');
+            document.getElementById('modal-content').innerHTML = `
+                <div id="print-area">
+                    <div class="text-center mb-6">
+                        <h1 class="font-serif text-4xl italic text-brand-900">Gold and Rose</h1>
+                        <h2 class="text-xs font-bold text-brand-500 uppercase tracking-widest mt-2">Scrap Buyback Receipt</h2>
+                    </div>
+                    <div class="space-y-4 text-sm border-t border-brand-200 pt-5 text-brand-800">
+                        <p><strong class="text-brand-500 uppercase text-[10px] tracking-wider block mb-1">Timestamp</strong> ${t.date || ''}</p>
+                        <p><strong class="text-brand-500 uppercase text-[10px] tracking-wider block mb-1">Customer</strong> ${t.name || ''}</p>
+                        <p><strong class="text-brand-500 uppercase text-[10px] tracking-wider block mb-1">Phone</strong> ${t.phone || 'N/A'}</p>
+                        <hr class="border-brand-100 my-2">
+                        <p><strong class="text-brand-500 uppercase text-[10px] tracking-wider block mb-1">Items Received</strong> ${t.summary || ''}</p>
+                        <div class="bg-brand-50 p-4 rounded-xl mt-4 text-center border border-brand-200">
+                            <span class="text-[10px] font-bold text-brand-500 uppercase tracking-wider block mb-1">Total Cash Payout</span>
+                            <span class="text-3xl font-black text-brand-900">$${t.total || '0.00'}</span>
+                        </div>
+                        ${t.image ? `<div class="mt-6"><p class="mb-2 text-[10px] font-bold text-brand-500 uppercase tracking-wider">ID / Reference Image:</p><img src="${t.image}" class="w-full max-w-[250px] rounded-xl border border-brand-200 shadow-sm" /></div>` : ''}
+                    </div>
+                </div>
+                <div id="print-button" class="mt-8 flex gap-3">
+                    <button onclick="window.print()" class="flex-1 bg-brand-800 text-brand-gold py-3.5 rounded-xl font-bold uppercase tracking-wider text-sm shadow-md hover:bg-brand-900 transition-colors">Print Receipt</button>
+                    <button onclick="document.getElementById('modal-backdrop').classList.add('hidden')" class="flex-1 bg-brand-100 text-brand-700 py-3.5 rounded-xl font-bold uppercase tracking-wider text-sm hover:bg-brand-200 transition-colors">Close</button>
+                </div>
+            `;
+            modal.classList.remove('hidden');
+        }
+
         function showQuoteDetails(idx) {
-            const q = state.ringQuoteTransactions[idx]; let d = JSON.parse(JSON.stringify(q.fullData));
+            const q = state.ringQuoteTransactions[idx]; 
+            if (!q) return;
+            let d = q.fullData ? JSON.parse(JSON.stringify(q.fullData)) : getEmptyQuoteSession();
             
-            // Auto-Migrate Legacy Data View
             if (!d.customRing && !d.weddingBand && !d.mensBand) {
                 const legacy = d; d = getEmptyQuoteSession();
                 if (legacy.type === 'mens_band') { d.mensBand = { ...d.mensBand, ...legacy }; }
@@ -881,8 +1199,8 @@
                     </div>
                     <div class="space-y-4 text-sm text-brand-800">
                         <div class="grid grid-cols-2 gap-4 bg-white p-4 rounded-xl border border-brand-100">
-                            <p><strong class="text-brand-400 uppercase text-[9px] tracking-wider block mb-0.5">Date</strong> ${q.date}</p>
-                            <p><strong class="text-brand-400 uppercase text-[9px] tracking-wider block mb-0.5">Client Name</strong> ${q.name}</p>
+                            <p><strong class="text-brand-400 uppercase text-[9px] tracking-wider block mb-0.5">Date</strong> ${q.date || ''}</p>
+                            <p><strong class="text-brand-400 uppercase text-[9px] tracking-wider block mb-0.5">Client Name</strong> ${q.name || ''}</p>
                             <p class="col-span-2"><strong class="text-brand-400 uppercase text-[9px] tracking-wider block mb-0.5">Contact Info</strong> ${q.phone || 'N/A'}</p>
                         </div>
             `;
@@ -891,7 +1209,7 @@
                 if(hasRingData(type, d)) {
                     const r = d[type];
                     const title = type === 'customRing' ? 'Engagement / Custom Ring' : (type === 'weddingBand' ? 'Wedding Band' : "Men's Band");
-                    let meleeSummary = (r.melee || []).filter(m => Number(m.qty) > 0).map(m => `${m.qty}x (${m.size}mm)`).join(', ') || "None";
+                    let meleeSummary = (r.melee || []).filter(m => m && Number(m.qty) > 0).map(m => `${m.qty}x (${m.size}mm)`).join(', ') || "None";
                     
                     htmlStr += `
                         <div class="border-t border-brand-200 pt-4 mt-4">
@@ -928,9 +1246,9 @@
                     </div>
                 </div>
                 <div id="print-button" class="mt-8 flex flex-col sm:flex-row gap-3">
-                    <button onclick="loadQuoteIntoEditor(${idx})" class="flex-1 bg-brand-100 text-brand-800 py-3.5 rounded-xl font-bold text-xs uppercase tracking-wider shadow-sm hover:bg-brand-200">Load Editor</button>
-                    <button onclick="window.print()" class="flex-1 bg-brand-800 text-brand-gold py-3.5 rounded-xl font-bold text-xs uppercase tracking-wider shadow-md hover:bg-brand-900">Print Handout</button>
-                    <button onclick="document.getElementById('modal-backdrop').classList.add('hidden')" class="flex-1 bg-white border border-brand-200 text-brand-600 py-3.5 rounded-xl font-bold text-xs uppercase tracking-wider hover:bg-brand-50">Close</button>
+                    <button onclick="loadQuoteIntoEditor(${idx})" class="flex-1 bg-brand-100 text-brand-800 py-3.5 rounded-xl font-bold text-xs uppercase tracking-wider shadow-sm hover:bg-brand-200 transition-colors">Load Editor</button>
+                    <button onclick="window.print()" class="flex-1 bg-brand-800 text-brand-gold py-3.5 rounded-xl font-bold text-xs uppercase tracking-wider shadow-md hover:bg-brand-900 transition-colors">Print Handout</button>
+                    <button onclick="document.getElementById('modal-backdrop').classList.add('hidden')" class="flex-1 bg-white border border-brand-200 text-brand-600 py-3.5 rounded-xl font-bold text-xs uppercase tracking-wider hover:bg-brand-50 transition-colors">Close</button>
                 </div>
             `;
             document.getElementById('modal-content').innerHTML = htmlStr;
@@ -938,7 +1256,9 @@
         }
 
         function loadQuoteIntoEditor(idx) {
-            const q = state.ringQuoteTransactions[idx]; let d = JSON.parse(JSON.stringify(q.fullData)); 
+            const q = state.ringQuoteTransactions[idx]; 
+            if (!q) return;
+            let d = q.fullData ? JSON.parse(JSON.stringify(q.fullData)) : getEmptyQuoteSession();
             
             if (!d.customRing && !d.weddingBand && !d.mensBand) {
                 const legacy = d; d = getEmptyQuoteSession();
@@ -955,36 +1275,24 @@
         }
 
         function render() {
-            try {
-                const app = document.getElementById('app');
-                app.innerHTML = `
-                    <div class="text-center mb-8 pt-6">
-                        <h1 class="font-serif text-5xl italic text-brand-900 tracking-wide drop-shadow-sm">Gold and Rose</h1>
-                        <p class="text-[10px] text-brand-400 uppercase tracking-[0.3em] font-bold mt-3">Executive Operations Dashboard</p>
-                    </div>
-                    ${buildTabsHTML()}
-                    ${state.activeTab === 'calculator' ? buildScrapHTML() : ''}
-                    ${state.activeTab === 'quote' ? buildQuoteTab() : ''}
-                    ${state.activeTab === 'spot_price' ? buildSpotHTML() : ''}
-                    ${state.activeTab === 'settings' ? buildSettingsHTML() : ''}
-                    ${state.activeTab === 'ledger' ? buildLedgerHTML() : ''}
-                    ${state.activeTab === 'baby_rings' ? buildBabyRingsHTML() : ''}
-                    <div id="modal-backdrop" class="fixed inset-0 bg-brand-900/60 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
-                        <div id="modal-content" class="bg-white rounded-3xl p-8 max-w-lg w-full shadow-2xl overflow-y-auto max-h-[90vh] border border-brand-100"></div>
-                    </div>
-                `;
-                if (state.activeTab === 'quote' || state.activeTab === 'settings') updateQuoteTotals();
-            } catch (e) {
-                console.error("Critical Render Failure:", e);
-                document.getElementById('app').innerHTML = `
-                    <div class="p-10 text-center bg-white rounded-2xl shadow-xl max-w-md mx-auto mt-20 border border-red-200">
-                        <div class="text-red-500 text-5xl mb-4">⚠️</div>
-                        <h2 class="text-xl font-black text-brand-800 mb-2">Memory Corruption Detected</h2>
-                        <p class="text-sm text-brand-500 mb-6">The application encountered outdated memory from a previous version.</p>
-                        <button onclick="localStorage.removeItem('gr_quote_ledger'); window.location.reload();" class="w-full bg-red-600 text-white font-bold py-4 rounded-xl hover:bg-red-700 shadow-md">Safely Wipe Corrupt Ledger & Restart</button>
-                    </div>
-                `;
-            }
+            const app = document.getElementById('app');
+            app.innerHTML = `
+                <div class="text-center mb-8 pt-6">
+                    <h1 class="font-serif text-5xl italic text-brand-900 tracking-wide drop-shadow-sm">Gold and Rose</h1>
+                    <p class="text-[10px] text-brand-400 uppercase tracking-[0.3em] font-bold mt-3">Executive Operations Dashboard</p>
+                </div>
+                ${buildTabsHTML()}
+                ${state.activeTab === 'calculator' ? buildScrapHTML() : ''}
+                ${state.activeTab === 'quote' ? buildQuoteTab() : ''}
+                ${state.activeTab === 'spot_price' ? buildSpotHTML() : ''}
+                ${state.activeTab === 'settings' ? buildSettingsHTML() : ''}
+                ${state.activeTab === 'ledger' ? buildLedgerHTML() : ''}
+                ${state.activeTab === 'baby_rings' ? buildBabyRingsHTML() : ''}
+                <div id="modal-backdrop" class="fixed inset-0 bg-brand-900/60 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
+                    <div id="modal-content" class="bg-white rounded-3xl p-8 max-w-lg w-full shadow-2xl overflow-y-auto max-h-[90vh] border border-brand-100"></div>
+                </div>
+            `;
+            if (state.activeTab === 'quote' || state.activeTab === 'settings') updateQuoteTotals();
         }
 
         window.onload = () => { loadStorageData(); render(); };
