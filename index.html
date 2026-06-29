@@ -4,23 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Gold & Rose Executive Dashboard</title>
-    <!-- Tailwind CSS Engine -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,500;1,600&display=swap" rel="stylesheet">
-    <!-- Automated Canvas & PDF Export Layout Handlers -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-    
     <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    fontFamily: { sans: ['Inter', 'sans-serif'], serif: ['Playfair Display', 'serif'] },
-                    colors: { brand: { 50: '#f8fafc', 100: '#f1f5f9', 200: '#e2e8f0', 300: '#cbd5e1', 400: '#94a3b8', 500: '#64748b', 600: '#475569', 700: '#334155', 800: '#1e293b', 900: '#0f172a', gold: '#d4af37', goldHover: '#bf9b30' } }
-                }
-            }
-        }
+        tailwind.config = { theme: { extend: { fontFamily: { sans: ['Inter', 'sans-serif'], serif: ['Playfair Display', 'serif'] }, colors: { brand: { 50: '#f8fafc', 100: '#f1f5f9', 200: '#e2e8f0', 300: '#cbd5e1', 400: '#94a3b8', 500: '#64748b', 600: '#475569', 700: '#334155', 800: '#1e293b', 900: '#0f172a', gold: '#d4af37', goldHover: '#bf9b30' } } } } }
     </script>
     <style>
         body { font-family: 'Inter', sans-serif; background-color: #f1f5f9; -webkit-tap-highlight-color: transparent; }
@@ -31,23 +20,14 @@
         .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
         .animate-fadeIn { animation: fadeIn 0.2s ease-out; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
-        
         .admin-only { display: none !important; }
         body.admin-mode .admin-only { display: block !important; }
-        
         .print-hide { display: block; }
-        @media print { 
-            body * { visibility: hidden; }
-            .print-section, .print-section * { visibility: visible; }
-            .print-section { position: absolute; left: 0; top: 0; width: 100%; margin:0; padding:0; }
-            .print-hide { display: none !important; }
-        }
-        
+        @media print { body * { visibility: hidden; } .print-section, .print-section * { visibility: visible; } .print-section { position: absolute; left: 0; top: 0; width: 100%; margin:0; padding:0; } .print-hide { display: none !important; } }
         #transform-box { border: 1.5px dashed #d4af37; position: absolute; pointer-events: auto; display: none; z-index: 50; }
         .transform-handle { position: absolute; width: 28px; height: 28px; background: white; border: 1.5px solid #d4af37; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #d4af37; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
         #handle-scale { bottom: -14px; right: -14px; cursor: nwse-resize; }
         #handle-rotate { top: -14px; right: -14px; cursor: grab; background: #1e293b; border-color: #1e293b; color: white; }
-        
         input:focus, select:focus, textarea:focus { outline: none; border-color: #94a3b8; box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.1); }
     </style>
 </head>
@@ -55,7 +35,6 @@
     <div id="app" class="min-h-screen p-3 md:p-6 max-w-5xl mx-auto"></div>
 
     <script>
-        // --- CRASH SHIELD ---
         window.onerror = function(msg, url, line) {
             document.getElementById('app').innerHTML = `
                 <div class="p-8 mt-10 max-w-md mx-auto bg-white rounded-3xl shadow-2xl border border-red-200 text-center">
@@ -68,12 +47,8 @@
             return true;
         };
 
-        function safeJSONParse(key, defaultVal) {
-            try { const val = localStorage.getItem(key); return (val && val !== "null" && val !== "undefined") ? JSON.parse(val) : defaultVal; } 
-            catch (e) { return defaultVal; }
-        }
+        function safeJSONParse(key, defaultVal) { try { const val = localStorage.getItem(key); return (val && val !== "null" && val !== "undefined") ? JSON.parse(val) : defaultVal; } catch (e) { return defaultVal; } }
 
-        // --- CONSTANTS ---
         const GOLD_API_KEY = 'goldapi-472c240569490d4d25bde6da08749829-io'; 
         const TROY_ONCE_GRAMS = 31.1034768;
         const DENSITIES = { gold: { 10: 11.4, 14: 13.1, 18: 15.5, 19: 16.1, 22: 17.7, 24: 19.3 }, platinum: 20.1, silver: 10.4 };
@@ -101,9 +76,7 @@
             rotate: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.59-9.28l5.67-5.67"/></svg>`
         };
 
-        // --- STATE DEFINITIONS ---
         function genId() { return Math.random().toString(36).substr(2, 9); }
-        
         function getEmptyRing(category) {
             const base = { id: genId(), category: category, material: 'gold', metalColor: 'Yellow', goldKarat: 14, fancy: [], melee: [], customAddon: '', customAddonDesc: '', ringNotes: '', discount: '', discountType: '$' };
             if(category === 'mensBand') return { ...base, mbSize: '', mbWidth: '', mbThickness: '', goldGrams: '' };
@@ -111,38 +84,28 @@
             if(category === 'tennisBracelet') return { ...base, tbLength: 7.0, tbShape: 'Round', tbSizeRound: '2.0', tbSizeIdx: 0, tbManualStones: '', tbManualGrams: '', tbManualCarats: '' };
             return { ...base, goldGrams: '', cRingSize: '', cBandWidth: '', cBandThickness: '', centerStone: { carats: '', shape: 'Round', setting: 'Round Prongs' } };
         }
-
         function getEmptyQuoteSession() {
             const r1 = getEmptyRing('customRing'); r1.melee.push({ size: '1.3', carat: ROUND_MELEE['1.3'], qty: '' });
             return { id: genId(), cName: '', cPhone: '', cEmail: '', applyTax: false, notes: '', activeSubTab: r1.id, rings: [r1], scrapCredit: 0, signatureImg: null, referenceSketch: null, referencePhoto: null };
         }
 
         const state = {
-            activeTab: 'quote', isAdminMode: false,
-            searchScrap: '', searchQuote: '',
-            spotPrices: { gold: 3500.00, silver: 45.00, platinum: 1200.00 },
+            activeTab: 'quote', isAdminMode: false, searchScrap: '', searchQuote: '', spotPrices: { gold: 3500.00, silver: 45.00, platinum: 1200.00 },
             customerName: '', phoneNumber: '', address: '', driversLicense: '', stoneRemovalQty: '', 
             scrapItems: [{ weight: '', material: 'gold', purity: 14, rate: 85 }], scrapImage: null,
-            scrapTransactions: [], ringQuoteTransactions: [],
-            lastUpdated: 'Manual Input', syncStatus: null,
-            quickCalcPurity: 'gold_14', quickCalcGrams: '',
-            isSketching: false, editingImageType: 'sketch',
+            scrapTransactions: [], ringQuoteTransactions: [], lastUpdated: 'Manual Input', syncStatus: null,
+            quickCalcPurity: 'gold_14', quickCalcGrams: '', isSketching: false, editingImageType: 'sketch',
             settings: { 
-                meleePricePerCt: 2400, fancyPricePerCt: 700, 
-                tennisMeleePricePerCt: 2600, tennisFancyPricePerCt: 800,
+                meleePricePerCt: 2400, fancyPricePerCt: 700, tennisMeleePricePerCt: 2600, tennisFancyPricePerCt: 800,
                 centerStones: { tier1: {price:1300}, tier2: {price:1200}, tier3: {price:1000} }, 
                 rawCostRates: { melee: 300, fancy: 380, center: 400 }, 
                 goldPricesPerGram: { 10: 200, 14: 233, 18: 280, 19: 290, 22: 320 }, platinumPricePerGram: 380, silverPricePerGram: 100, 
-                tennisLaborRetail: 0, 
-                tennisGoldPricesPerGram: { 10: 210, 14: 245, 18: 295, 19: 305, 22: 335 },
-                tennisPlatinumPricePerGram: 400, tennisSilverPricePerGram: 110,
-                tennisMeleePricePerCtRaw: 350, tennisFancyPricePerCtRaw: 420
+                tennisLaborRetail: 0, tennisGoldPricesPerGram: { 10: 210, 14: 245, 18: 295, 19: 305, 22: 335 },
+                tennisPlatinumPricePerGram: 400, tennisSilverPricePerGram: 110, tennisMeleePricePerCtRaw: 350, tennisFancyPricePerCtRaw: 420
             },
-            quoteSession: getEmptyQuoteSession(),
-            modal: null
+            quoteSession: getEmptyQuoteSession(), modal: null
         };
 
-        // --- SYSTEM CORE ---
         function loadStorageData() {
             try {
                 const st = safeJSONParse('gr_scrap_ledger', []); state.scrapTransactions = Array.isArray(st) ? st : [];
@@ -153,46 +116,26 @@
                     if(!state.settings.centerStones) state.settings.centerStones = { tier1: {price:1300}, tier2: {price:1200}, tier3: {price:1000} };
                     if(state.settings.tennisMeleePricePerCt === undefined) { 
                         state.settings.tennisMeleePricePerCt = 2600; state.settings.tennisFancyPricePerCt = 800;
-                        state.settings.tennisLaborRetail = 0;
-                        state.settings.tennisGoldPricesPerGram = { 10: 210, 14: 245, 18: 295, 19: 305, 22: 335 };
+                        state.settings.tennisLaborRetail = 0; state.settings.tennisGoldPricesPerGram = { 10: 210, 14: 245, 18: 295, 19: 305, 22: 335 };
                         state.settings.tennisPlatinumPricePerGram = 400; state.settings.tennisSilverPricePerGram = 110;
                         state.settings.tennisMeleePricePerCtRaw = 350; state.settings.tennisFancyPricePerCtRaw = 420;
                     }
                 }
-                
                 state.quoteSession.rings.forEach(r => { if(r.discount === undefined) r.discount = ''; });
-            } catch (e) { console.warn("Storage Load Error Caught."); }
+            } catch (e) { console.warn("Storage Load Error."); }
         }
 
-        function toggleAdminMode() {
-            state.isAdminMode = !state.isAdminMode;
-            document.body.classList.toggle('admin-mode', state.isAdminMode);
-            window.render();
-        }
+        function toggleAdminMode() { state.isAdminMode = !state.isAdminMode; document.body.classList.toggle('admin-mode', state.isAdminMode); window.render(); }
 
-        // --- MATH ESTIMATORS ---
         function getTennisEstimates(r) {
             let stone_mm = 0; let caratPerStone = 0;
             if(r.tbShape === 'Round') { stone_mm = Number(r.tbSizeRound) || 2.0; caratPerStone = ROUND_MELEE[r.tbSizeRound] || 0.03; }
-            else { 
-                const activeFancy = FANCY_SHAPES[r.tbShape] || FANCY_SHAPES['Princess'];
-                const fData = activeFancy[r.tbSizeIdx || 0] || activeFancy[0];
-                stone_mm = parseFloat(fData.label) || 2.0; caratPerStone = fData.carat || 0.05; 
-            }
+            else { const activeFancy = FANCY_SHAPES[r.tbShape] || FANCY_SHAPES['Princess']; const fData = activeFancy[r.tbSizeIdx || 0] || activeFancy[0]; stone_mm = parseFloat(fData.label) || 2.0; caratPerStone = fData.carat || 0.05; }
             if(!stone_mm) return { estStones: 0, estGrams: 0, caratPerStone: 0 };
-            
-            const baseStones7 = Math.round(177.8 / (stone_mm + 0.4));
-            const baseGrams7 = (stone_mm * 5) + 1;
-            const lengthMult = Number(r.tbLength || 7.0) / 7.0;
-            
+            const baseStones7 = Math.round(177.8 / (stone_mm + 0.4)); const baseGrams7 = (stone_mm * 5) + 1; const lengthMult = Number(r.tbLength || 7.0) / 7.0;
             let densityMult = 1.0;
-            if(r.material === 'gold') densityMult = (DENSITIES.gold[r.goldKarat] || 13.1) / 13.1;
-            else if(r.material === 'platinum') densityMult = DENSITIES.platinum / 13.1;
-            else if(r.material === 'silver') densityMult = DENSITIES.silver / 13.1;
-
-            const estStones = Math.round(baseStones7 * lengthMult);
-            const estGrams = (baseGrams7 * lengthMult * densityMult).toFixed(2);
-            return { estStones, estGrams, caratPerStone };
+            if(r.material === 'gold') densityMult = (DENSITIES.gold[r.goldKarat] || 13.1) / 13.1; else if(r.material === 'platinum') densityMult = DENSITIES.platinum / 13.1; else if(r.material === 'silver') densityMult = DENSITIES.silver / 13.1;
+            return { estStones: Math.round(baseStones7 * lengthMult), estGrams: (baseGrams7 * lengthMult * densityMult).toFixed(2), caratPerStone };
         }
 
         function hasRingData(r) { return r && (Number(r.goldGrams)>0 || Number(r.centerStone?.carats)>0 || (r.fancy||[]).some(f=>Number(f.qty)>0) || (r.melee||[]).some(m=>Number(m.qty)>0) || Number(r.customAddon)>0 || Number(r.tbManualStones)>0); }
@@ -201,454 +144,287 @@
             if(!r) return 0;
             let costMetal = 0; const grams = Number(r.goldGrams) || 0;
             if(r.category === 'tennisBracelet') {
-                if(r.material === 'gold') costMetal = grams * Number(state.settings.tennisGoldPricesPerGram[r.goldKarat] || 0);
-                else if(r.material === 'platinum') costMetal = grams * Number(state.settings.tennisPlatinumPricePerGram);
-                else if(r.material === 'silver') costMetal = grams * Number(state.settings.tennisSilverPricePerGram);
-                
-                const est = getTennisEstimates(r);
-                const finalStones = Number(r.tbManualStones) || est.estStones;
-                const finalCarats = Number(r.tbManualCarats) || (finalStones * est.caratPerStone);
-                
+                if(r.material === 'gold') costMetal = grams * Number(state.settings.tennisGoldPricesPerGram[r.goldKarat] || 0); else if(r.material === 'platinum') costMetal = grams * Number(state.settings.tennisPlatinumPricePerGram); else if(r.material === 'silver') costMetal = grams * Number(state.settings.tennisSilverPricePerGram);
+                const est = getTennisEstimates(r); const finalStones = Number(r.tbManualStones) || est.estStones; const finalCarats = Number(r.tbManualCarats) || (finalStones * est.caratPerStone);
                 const pricePerCt = r.tbShape === 'Round' ? Number(state.settings.tennisMeleePricePerCt) : Number(state.settings.tennisFancyPricePerCt);
-                const costStones = finalCarats * pricePerCt;
-                const costLabor = finalStones * Number(state.settings.tennisLaborRetail || 0);
-                return costStones + costMetal + costLabor + (Number(r.customAddon)||0);
+                return (finalCarats * pricePerCt) + costMetal + (finalStones * Number(state.settings.tennisLaborRetail || 0)) + (Number(r.customAddon)||0);
             }
-            if(r.material === 'gold') costMetal = grams * Number(state.settings.goldPricesPerGram[r.goldKarat] || 0);
-            else if(r.material === 'platinum') costMetal = grams * Number(state.settings.platinumPricePerGram);
-            else if(r.material === 'silver') costMetal = grams * Number(state.settings.silverPricePerGram);
-
+            if(r.material === 'gold') costMetal = grams * Number(state.settings.goldPricesPerGram[r.goldKarat] || 0); else if(r.material === 'platinum') costMetal = grams * Number(state.settings.platinumPricePerGram); else if(r.material === 'silver') costMetal = grams * Number(state.settings.silverPricePerGram);
             let meleeCts = 0; (r.melee || []).forEach(m => { meleeCts += (Number(m.qty)||0) * Number(m.carat); });
-            const costMelee = meleeCts * Number(state.settings.meleePricePerCt);
-            
-            let costFancy = 0;
-            (r.fancy || []).forEach(f => {
-                const fData = (FANCY_SHAPES[f.shape] || [])[f.sizeIdx] || {carat:0};
-                costFancy += (Number(f.qty)||0) * Number(fData.carat) * Number(state.settings.fancyPricePerCt);
-            });
-            
+            let costFancy = 0; (r.fancy || []).forEach(f => { const fData = (FANCY_SHAPES[f.shape] || [])[f.sizeIdx] || {carat:0}; costFancy += (Number(f.qty)||0) * Number(fData.carat) * Number(state.settings.fancyPricePerCt); });
             let costCenter = 0;
             if ((r.category === 'customRing' || r.category === 'pendant') && r.centerStone?.carats) {
-                const cts = Number(r.centerStone.carats);
-                let mult = Number(state.settings.centerStones.tier3.price);
-                if(cts < 2.0) mult = Number(state.settings.centerStones.tier1.price);
-                else if(cts < 3.0) mult = Number(state.settings.centerStones.tier2.price);
+                const cts = Number(r.centerStone.carats); let mult = Number(state.settings.centerStones.tier3.price);
+                if(cts < 2.0) mult = Number(state.settings.centerStones.tier1.price); else if(cts < 3.0) mult = Number(state.settings.centerStones.tier2.price);
                 costCenter = cts * mult;
             }
-            return costMelee + costFancy + costMetal + costCenter + (Number(r.customAddon)||0);
+            return (meleeCts * Number(state.settings.meleePricePerCt)) + costFancy + costMetal + costCenter + (Number(r.customAddon)||0);
         }
 
         function calculateRawCost(r) {
             if(!r) return 0;
-            const spot = Number(state.spotPrices[r.material]) / TROY_ONCE_GRAMS;
-            const pf = r.material === 'gold' ? (Number(r.goldKarat)/24) : (r.material==='silver'?0.925:0.950);
+            const spot = Number(state.spotPrices[r.material]) / TROY_ONCE_GRAMS; const pf = r.material === 'gold' ? (Number(r.goldKarat)/24) : (r.material==='silver'?0.925:0.950);
             const rawMetal = (Number(r.goldGrams)||0) * spot * pf;
-
             if(r.category === 'tennisBracelet') {
-                const est = getTennisEstimates(r);
-                const finalStones = Number(r.tbManualStones) || est.estStones;
-                const finalCarats = Number(r.tbManualCarats) || (finalStones * est.caratPerStone);
+                const est = getTennisEstimates(r); const finalStones = Number(r.tbManualStones) || est.estStones; const finalCarats = Number(r.tbManualCarats) || (finalStones * est.caratPerStone);
                 const pricePerCtRaw = r.tbShape === 'Round' ? Number(state.settings.tennisMeleePricePerCtRaw || state.settings.rawCostRates.melee) : Number(state.settings.tennisFancyPricePerCtRaw || state.settings.rawCostRates.fancy);
                 return (finalCarats * pricePerCtRaw) + rawMetal; 
             }
-
             let meleeCts = 0; (r.melee || []).forEach(m => { meleeCts += (Number(m.qty)||0) * Number(m.carat); });
-            const rawMelee = meleeCts * Number(state.settings.rawCostRates.melee);
-            
-            let rawFancy = 0;
-            (r.fancy || []).forEach(f => {
-                const fData = (FANCY_SHAPES[f.shape] || [])[f.sizeIdx] || {carat:0};
-                rawFancy += (Number(f.qty)||0) * Number(fData.carat) * Number(state.settings.rawCostRates.fancy);
-            });
-            
+            let rawFancy = 0; (r.fancy || []).forEach(f => { const fData = (FANCY_SHAPES[f.shape] || [])[f.sizeIdx] || {carat:0}; rawFancy += (Number(f.qty)||0) * Number(fData.carat) * Number(state.settings.rawCostRates.fancy); });
             const rawCenter = (r.category === 'customRing' || r.category === 'pendant') ? ((Number(r.centerStone?.carats)||0) * Number(state.settings.rawCostRates.center)) : 0;
-            return rawMelee + rawFancy + rawCenter + rawMetal;
+            return (meleeCts * Number(state.settings.rawCostRates.melee)) + rawFancy + rawCenter + rawMetal;
         }
 
-        // --- SKETCHPAD METHODS ---
-        let sketchCtx, isDrawing = false, bgImageObj = null;
-        let imgState = { x: 0, y: 0, scale: 1, rot: 0, width: 0, height: 0 };
-        let sketchState = { tool: 'pen', color: '#1e293b', thickness: 3.0 };
+        let sketchCtx, isDrawing = false, bgImageObj = null, imgState = { x: 0, y: 0, scale: 1, rot: 0, width: 0, height: 0 }, sketchState = { tool: 'pen', color: '#1e293b', thickness: 3.0 };
         let transformMode = null, transformStartX = 0, transformStartY = 0, transformStartDist = 1, transformStartAngle = 0, transformCenterX = 0, transformCenterY = 0, initialImgState = {};
 
         function editThumbnail(type) {
-            state.editingImageType = type;
-            const src = type === 'sketch' ? state.quoteSession.referenceSketch : state.quoteSession.referencePhoto;
-            state.isSketching = true; window.render();
+            state.editingImageType = type; state.isSketching = true; window.render();
             setTimeout(() => {
-                const canvas = document.getElementById('sketch-canvas'); const container = document.getElementById('sketch-container');
-                if(!canvas || !container) return;
+                const canvas = document.getElementById('sketch-canvas'); const container = document.getElementById('sketch-container'); if(!canvas || !container) return;
                 canvas.width = container.clientWidth; canvas.height = container.clientHeight;
                 sketchCtx = canvas.getContext('2d', { willReadFrequently: true }); sketchCtx.clearRect(0, 0, canvas.width, canvas.height); 
-                bgImageObj = null;
-                if(src) {
-                    const img = new Image(); img.onload = () => {
-                        bgImageObj = img; imgState.width = img.width; imgState.height = img.height;
-                        imgState.scale = Math.min(1, canvas.width / img.width, canvas.height / img.height) * 0.8;
-                        imgState.x = (canvas.width - (img.width * imgState.scale)) / 2;
-                        imgState.y = (canvas.height - (img.height * imgState.scale)) / 2;
-                        imgState.rot = 0; window.updateTransformBox();
-                    }; img.src = src;
-                } else { window.updateTransformBox(); }
+                bgImageObj = null; const src = type === 'sketch' ? state.quoteSession.referenceSketch : state.quoteSession.referencePhoto;
+                if(src) { const img = new Image(); img.onload = () => { bgImageObj = img; imgState.width = img.width; imgState.height = img.height; imgState.scale = Math.min(1, canvas.width / img.width, canvas.height / img.height) * 0.8; imgState.x = (canvas.width - (img.width * imgState.scale)) / 2; imgState.y = (canvas.height - (img.height * imgState.scale)) / 2; imgState.rot = 0; window.updateTransformBox(); }; img.src = src; } else { window.updateTransformBox(); }
                 window.setSketchTool('pen'); window.setSketchColor('#1e293b', 'slate'); window.setSketchThickness(3.0, 2);
-                canvas.addEventListener('pointerdown', window.startDrawing); canvas.addEventListener('pointermove', window.draw);
-                canvas.addEventListener('pointerup', window.stopDrawing); canvas.addEventListener('pointerout', window.stopDrawing);
-                const tBox = document.getElementById('transform-box');
-                if(tBox) { tBox.addEventListener('pointerdown', window.handleTransformStart); window.addEventListener('pointermove', window.handleTransformMove); window.addEventListener('pointerup', window.handleTransformEnd); }
+                canvas.addEventListener('pointerdown', window.startDrawing); canvas.addEventListener('pointermove', window.draw); canvas.addEventListener('pointerup', window.stopDrawing); canvas.addEventListener('pointerout', window.stopDrawing);
+                const tBox = document.getElementById('transform-box'); if(tBox) { tBox.addEventListener('pointerdown', window.handleTransformStart); window.addEventListener('pointermove', window.handleTransformMove); window.addEventListener('pointerup', window.handleTransformEnd); }
             }, 50);
         }
 
-        function handleSketchBgUpload(e) {
-            const file = e.target.files[0]; if (!file) return;
-            const reader = new FileReader(); reader.onload = function(event) {
-                const img = new Image(); img.onload = function() {
-                    bgImageObj = img; imgState.width = img.width; imgState.height = img.height;
-                    const canvas = document.getElementById('sketch-canvas');
-                    imgState.scale = Math.min(1, canvas.width / img.width, canvas.height / img.height) * 0.8;
-                    imgState.x = (canvas.width - (img.width * imgState.scale)) / 2;
-                    imgState.y = (canvas.height - (img.height * imgState.scale)) / 2;
-                    imgState.rot = 0; window.setSketchTool('transform'); window.updateTransformBox();
-                }; img.src = event.target.result;
-            }; reader.readAsDataURL(file);
-        }
-
-        function updateTransformBox() {
-            const tBox = document.getElementById('transform-box'); const imgEl = document.getElementById('sketch-bg');
-            if (!tBox || !imgEl || !bgImageObj) { if(tBox) tBox.style.display = 'none'; if(imgEl) imgEl.style.display = 'none'; return; }
-            const w = imgState.width * imgState.scale; const h = imgState.height * imgState.scale;
-            imgEl.src = bgImageObj.src; imgEl.style.display = 'block';
-            imgEl.style.width = imgState.width + 'px'; imgEl.style.height = imgState.height + 'px';
-            imgEl.style.transform = `translate(${imgState.x}px, ${imgState.y}px) scale(${imgState.scale}) rotate(${imgState.rot}deg)`;
-            imgEl.style.transformOrigin = "top left";
-            tBox.style.width = w + 'px'; tBox.style.height = h + 'px';
-            const cx = imgState.x + (w/2); const cy = imgState.y + (h/2);
-            tBox.style.transform = `translate(${cx - w/2}px, ${cy - h/2}px) rotate(${imgState.rot}deg)`;
-        }
-
-        function handleTransformStart(e) {
-            if (sketchState.tool !== 'transform') return; e.preventDefault(); 
-            transformStartX = e.clientX; transformStartY = e.clientY; initialImgState = { ...imgState };
-            const tBox = document.getElementById('transform-box'); const rect = tBox.getBoundingClientRect();
-            transformCenterX = rect.left + rect.width / 2; transformCenterY = rect.top + rect.height / 2;
-            if (e.target.closest('#handle-scale')) { transformMode = 'scale'; const dx = e.clientX - transformCenterX; const dy = e.clientY - transformCenterY; transformStartDist = Math.sqrt(dx*dx + dy*dy) || 1; } 
-            else if (e.target.closest('#handle-rotate')) { transformMode = 'rotate'; transformStartAngle = Math.atan2(e.clientY - transformCenterY, e.clientX - transformCenterX); } 
-            else { transformMode = 'drag'; }
-        }
-
-        function handleTransformMove(e) {
-            if (!transformMode) return; e.preventDefault();
-            if (transformMode === 'drag') { imgState.x = initialImgState.x + (e.clientX - transformStartX); imgState.y = initialImgState.y + (e.clientY - transformStartY); } 
-            else if (transformMode === 'scale') { const dx = e.clientX - transformCenterX; const dy = e.clientY - transformCenterY; imgState.scale = Math.max(0.1, initialImgState.scale * (Math.sqrt(dx*dx + dy*dy) / transformStartDist)); } 
-            else if (transformMode === 'rotate') { imgState.rot = initialImgState.rot + ((Math.atan2(e.clientY - transformCenterY, e.clientX - transformCenterX) - transformStartAngle) * (180 / Math.PI)); }
-            window.updateTransformBox();
-        }
-
+        function handleSketchBgUpload(e) { const file = e.target.files[0]; if (!file) return; const reader = new FileReader(); reader.onload = function(event) { const img = new Image(); img.onload = function() { bgImageObj = img; imgState.width = img.width; imgState.height = img.height; const canvas = document.getElementById('sketch-canvas'); imgState.scale = Math.min(1, canvas.width / img.width, canvas.height / img.height) * 0.8; imgState.x = (canvas.width - (img.width * imgState.scale)) / 2; imgState.y = (canvas.height - (img.height * imgState.scale)) / 2; imgState.rot = 0; window.setSketchTool('transform'); window.updateTransformBox(); }; img.src = event.target.result; }; reader.readAsDataURL(file); }
+        function updateTransformBox() { const tBox = document.getElementById('transform-box'); const imgEl = document.getElementById('sketch-bg'); if (!tBox || !imgEl || !bgImageObj) { if(tBox) tBox.style.display = 'none'; if(imgEl) imgEl.style.display = 'none'; return; } const w = imgState.width * imgState.scale; const h = imgState.height * imgState.scale; imgEl.src = bgImageObj.src; imgEl.style.display = 'block'; imgEl.style.width = imgState.width + 'px'; imgEl.style.height = imgState.height + 'px'; imgEl.style.transform = `translate(${imgState.x}px, ${imgState.y}px) scale(${imgState.scale}) rotate(${imgState.rot}deg)`; imgEl.style.transformOrigin = "top left"; tBox.style.width = w + 'px'; tBox.style.height = h + 'px'; const cx = imgState.x + (w/2); const cy = imgState.y + (h/2); tBox.style.transform = `translate(${cx - w/2}px, ${cy - h/2}px) rotate(${imgState.rot}deg)`; }
+        function handleTransformStart(e) { if (sketchState.tool !== 'transform') return; e.preventDefault(); transformStartX = e.clientX; transformStartY = e.clientY; initialImgState = { ...imgState }; const tBox = document.getElementById('transform-box'); const rect = tBox.getBoundingClientRect(); transformCenterX = rect.left + rect.width / 2; transformCenterY = rect.top + rect.height / 2; if (e.target.closest('#handle-scale')) { transformMode = 'scale'; const dx = e.clientX - transformCenterX; const dy = e.clientY - transformCenterY; transformStartDist = Math.sqrt(dx*dx + dy*dy) || 1; } else if (e.target.closest('#handle-rotate')) { transformMode = 'rotate'; transformStartAngle = Math.atan2(e.clientY - transformCenterY, e.clientX - transformCenterX); } else { transformMode = 'drag'; } }
+        function handleTransformMove(e) { if (!transformMode) return; e.preventDefault(); if (transformMode === 'drag') { imgState.x = initialImgState.x + (e.clientX - transformStartX); imgState.y = initialImgState.y + (e.clientY - transformStartY); } else if (transformMode === 'scale') { const dx = e.clientX - transformCenterX; const dy = e.clientY - transformCenterY; imgState.scale = Math.max(0.1, initialImgState.scale * (Math.sqrt(dx*dx + dy*dy) / transformStartDist)); } else if (transformMode === 'rotate') { imgState.rot = initialImgState.rot + ((Math.atan2(e.clientY - transformCenterY, e.clientX - transformCenterX) - transformStartAngle) * (180 / Math.PI)); } window.updateTransformBox(); }
         function handleTransformEnd() { transformMode = null; }
-
-        function setSketchTool(tool) {
-            sketchState.tool = tool;
-            ['pen', 'highlighter', 'eraser', 'transform'].forEach(t => { const el = document.getElementById('tool-' + t); if (el) { el.classList.remove('border-brand-gold', 'bg-brand-gold/10', 'text-brand-gold'); el.classList.add('border-transparent', 'text-brand-500'); } });
-            const selected = document.getElementById('tool-' + tool); if (selected) { selected.classList.add('border-brand-gold', 'bg-brand-gold/10', 'text-brand-gold'); }
-            const canvas = document.getElementById('sketch-canvas'); const tBox = document.getElementById('transform-box');
-            if(canvas && tBox) { if(tool === 'transform') { canvas.style.pointerEvents = 'none'; if(bgImageObj) tBox.style.display = 'block'; } else { canvas.style.pointerEvents = 'auto'; tBox.style.display = 'none'; } }
-            if(sketchCtx) {
-                sketchCtx.lineCap = 'round'; sketchCtx.lineJoin = 'round';
-                if (tool === 'eraser') { sketchCtx.globalCompositeOperation = 'destination-out'; sketchCtx.lineWidth = sketchState.thickness * 6; sketchCtx.globalAlpha = 1.0; } 
-                else { sketchCtx.globalCompositeOperation = 'source-over'; sketchCtx.strokeStyle = sketchState.color; sketchCtx.lineWidth = tool === 'highlighter' ? sketchState.thickness * 4 : sketchState.thickness; sketchCtx.globalAlpha = tool === 'highlighter' ? 0.3 : 1.0; }
-            }
-        }
-
-        function setSketchColor(color, id) {
-            sketchState.color = color; ['slate', 'gold', 'red', 'green'].forEach(c => { const el = document.getElementById('color-' + c); if(el) { el.classList.remove('border-brand-400', 'scale-110'); el.classList.add('border-transparent', 'scale-100'); } });
-            const selected = document.getElementById('color-' + id); if(selected) { selected.classList.add('border-brand-400', 'scale-110'); }
-            window.setSketchTool('pen');
-        }
-
-        function setSketchThickness(thickness, num) {
-            sketchState.thickness = thickness; [1, 2, 3].forEach(n => { const el = document.getElementById('thick-' + n); if(el) { el.classList.remove('bg-brand-gold', 'shadow-md'); el.classList.add('bg-brand-300'); } });
-            const selected = document.getElementById('thick-' + num); if(selected) { selected.classList.add('bg-brand-gold', 'shadow-md'); }
-            window.setSketchTool(sketchState.tool);
-        }
-
+        function setSketchTool(tool) { sketchState.tool = tool; ['pen', 'highlighter', 'eraser', 'transform'].forEach(t => { const el = document.getElementById('tool-' + t); if (el) { el.classList.remove('border-brand-gold', 'bg-brand-gold/10', 'text-brand-gold'); el.classList.add('border-transparent', 'text-brand-500'); } }); const selected = document.getElementById('tool-' + tool); if (selected) { selected.classList.add('border-brand-gold', 'bg-brand-gold/10', 'text-brand-gold'); } const canvas = document.getElementById('sketch-canvas'); const tBox = document.getElementById('transform-box'); if(canvas && tBox) { if(tool === 'transform') { canvas.style.pointerEvents = 'none'; if(bgImageObj) tBox.style.display = 'block'; } else { canvas.style.pointerEvents = 'auto'; tBox.style.display = 'none'; } } if(sketchCtx) { sketchCtx.lineCap = 'round'; sketchCtx.lineJoin = 'round'; if (tool === 'eraser') { sketchCtx.globalCompositeOperation = 'destination-out'; sketchCtx.lineWidth = sketchState.thickness * 6; sketchCtx.globalAlpha = 1.0; } else { sketchCtx.globalCompositeOperation = 'source-over'; sketchCtx.strokeStyle = sketchState.color; sketchCtx.lineWidth = tool === 'highlighter' ? sketchState.thickness * 4 : sketchState.thickness; sketchCtx.globalAlpha = tool === 'highlighter' ? 0.3 : 1.0; } } }
+        function setSketchColor(color, id) { sketchState.color = color; ['slate', 'gold', 'red', 'green'].forEach(c => { const el = document.getElementById('color-' + c); if(el) { el.classList.remove('border-brand-400', 'scale-110'); el.classList.add('border-transparent', 'scale-100'); } }); const selected = document.getElementById('color-' + id); if(selected) { selected.classList.add('border-brand-400', 'scale-110'); } window.setSketchTool('pen'); }
+        function setSketchThickness(thickness, num) { sketchState.thickness = thickness; [1, 2, 3].forEach(n => { const el = document.getElementById('thick-' + n); if(el) { el.classList.remove('bg-brand-gold', 'shadow-md'); el.classList.add('bg-brand-300'); } }); const selected = document.getElementById('thick-' + num); if(selected) { selected.classList.add('bg-brand-gold', 'shadow-md'); } window.setSketchTool(sketchState.tool); }
         function startDrawing(e) { isDrawing = true; window.draw(e); }
-        function draw(e) {
-            e.preventDefault(); if (!isDrawing) return;
-            const canvas = document.getElementById('sketch-canvas'); const rect = canvas.getBoundingClientRect();
-            const x = (e.clientX - rect.left) * (canvas.width / rect.width); const y = (e.clientY - rect.top) * (canvas.height / rect.height);
-            sketchCtx.lineTo(x, y); sketchCtx.stroke(); sketchCtx.beginPath(); sketchCtx.moveTo(x, y);
-        }
+        function draw(e) { e.preventDefault(); if (!isDrawing) return; const canvas = document.getElementById('sketch-canvas'); const rect = canvas.getBoundingClientRect(); const x = (e.clientX - rect.left) * (canvas.width / rect.width); const y = (e.clientY - rect.top) * (canvas.height / rect.height); sketchCtx.lineTo(x, y); sketchCtx.stroke(); sketchCtx.beginPath(); sketchCtx.moveTo(x, y); }
         function stopDrawing() { isDrawing = false; if(sketchCtx) sketchCtx.beginPath(); }
+        function clearSketch() { const canvas = document.getElementById('sketch-canvas'); sketchCtx.clearRect(0, 0, canvas.width, canvas.height); bgImageObj = null; document.getElementById('sketch-bg').style.display = 'none'; document.getElementById('transform-box').style.display = 'none'; window.setSketchTool('pen'); }
+        function saveSketch() { const canvas = document.getElementById('sketch-canvas'); const exportCanvas = document.createElement('canvas'); exportCanvas.width = canvas.width; exportCanvas.height = canvas.height; const ctx = exportCanvas.getContext('2d'); ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, exportCanvas.width, exportCanvas.height); if (bgImageObj) { ctx.save(); const cx = imgState.x + (imgState.width * imgState.scale) / 2; const cy = imgState.y + (imgState.height * imgState.scale) / 2; ctx.translate(cx, cy); ctx.rotate(imgState.rot * Math.PI / 180); ctx.translate(-cx, -cy); ctx.drawImage(bgImageObj, imgState.x, imgState.y, imgState.width * imgState.scale, imgState.height * imgState.scale); ctx.restore(); } ctx.drawImage(canvas, 0, 0); const dataUrl = exportCanvas.toDataURL('image/jpeg', 0.8); if(state.editingImageType === 'photo') state.quoteSession.referencePhoto = dataUrl; else state.quoteSession.referenceSketch = dataUrl; state.isSketching = false; window.render(); }
+        function viewImage(src) { state.modal = { type: 'imageView', src: src }; window.render(); }
 
-        function clearSketch() {
-            const canvas = document.getElementById('sketch-canvas'); sketchCtx.clearRect(0, 0, canvas.width, canvas.height);
-            bgImageObj = null; document.getElementById('sketch-bg').style.display = 'none'; document.getElementById('transform-box').style.display = 'none'; window.setSketchTool('pen');
-        }
+        // --- SCRAP/QUOTE/DATA ACTIONS ---
+        function calculateScrapTotal() { return Math.max(0, state.scrapItems.reduce((t, i) => t + ((Number(i.weight)||0) * (i.material==='gold'?i.purity/24:i.purity) * ((state.spotPrices[i.material]||0)/TROY_ONCE_GRAMS) * ((Number(i.rate)||0)/100)), 0) - ((Number(state.stoneRemovalQty)||0)*5)); }
+        async function fetchLivePrices() { if (GOLD_API_KEY.includes('INSERT')) return alert("Please set your live GoldAPI token inside the code."); state.syncStatus = "Fetching..."; window.updateSpotUI(); window.render(); try { const headers = { 'x-access-token': GOLD_API_KEY, 'Content-Type': 'application/json' }; const res = await Promise.all(['XAU', 'XAG', 'XPT'].map(m => fetch(`https://www.goldapi.io/api/${m}/CAD`, { headers }).then(r => r.json()))); state.spotPrices.gold = res[0].price; state.spotPrices.silver = res[1].price; state.spotPrices.platinum = res[2].price; state.lastUpdated = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }); state.syncStatus = `Synced (${state.lastUpdated})`; window.updateScrapUI(); window.updateSpotUI(); window.render(); } catch (e) { state.syncStatus = 'Error'; window.updateSpotUI(); window.render(); alert("Network error: " + e.message); } }
+        function updateScrapUI() { state.scrapItems.forEach((i, idx) => { const el = document.getElementById(`scrap-row-total-${idx}`); if(el) el.innerText = '$' + ((Number(i.weight)||0) * (i.material==='gold'?i.purity/24:i.purity) * ((state.spotPrices[i.material]||0)/TROY_ONCE_GRAMS) * ((Number(i.rate)||0)/100)).toFixed(2); }); const grandEl = document.getElementById('scrap-grand-total'); if (grandEl) grandEl.innerText = '$' + calculateScrapTotal().toFixed(2); }
+        function calculateQuickRawCost() { const g = Number(state.quickCalcGrams)||0; if (!g) return "0.00"; const [m, s] = state.quickCalcPurity.split('_'); return (g * ((state.spotPrices[m]||0)/TROY_ONCE_GRAMS) * (m==='gold'?Number(s)/24:Number(s))).toFixed(2); }
+        function updateSpotUI() { const q = document.getElementById('spot-quick-total'); if(q) q.innerText = '$' + calculateQuickRawCost(); }
+        function saveScrapTransaction() { if (!state.customerName || !state.scrapItems[0].weight) return alert("Enter client name and at least one item."); state.scrapTransactions.unshift({ id: genId(), date: new Date().toLocaleString(), name: state.customerName, phone: state.phoneNumber, summary: state.scrapItems.filter(i=>i.weight).map(i=>`${i.weight}g ${i.material}`).join(', '), total: calculateScrapTotal().toFixed(2), image: state.scrapImage }); localStorage.setItem('gr_scrap_ledger', JSON.stringify(state.scrapTransactions)); state.customerName = ''; state.phoneNumber = ''; state.address = ''; state.driversLicense = ''; state.stoneRemovalQty = ''; state.scrapImage = null; state.scrapItems = [{ weight: '', material: 'gold', purity: 14, rate: 85 }]; window.render(); alert("Scrap logged successfully."); }
+        function applyScrapCredit(id) { const t = state.scrapTransactions.find(x => x.id === id); if(t) { state.quoteSession.scrapCredit = Number(String(t.total).replace(/[^0-9.-]+/g,"")); state.modal = null; window.updateQuoteTotals(); window.render(); } }
+        function updateQuoteTotals() { if(!state.quoteSession || !state.quoteSession.rings) return; let grandTotal=0, rawTotal=0, discountTotal=0; state.quoteSession.rings.forEach(r => { if(r.category==='mensBand') { const sz=Number(r.mbSize)||0, w=Number(r.mbWidth)||0, t=Number(r.mbThickness)||0; if(sz&&w&&t) r.goldGrams = (((w*t*Math.PI*((11.63+(0.8128*sz))+t))/1000)*(r.material==='gold'?DENSITIES.gold[r.goldKarat]:(r.material==='silver'?DENSITIES.silver:DENSITIES.platinum))).toFixed(2); else r.goldGrams=''; const el = document.getElementById(`mb-calc-weight-${r.id}`); if(el) el.innerText = r.goldGrams ? r.goldGrams+'g' : '0.00g'; } else if(r.category==='tennisBracelet') { const est = getTennisEstimates(r); r.goldGrams = Number(r.tbManualGrams)||est.estGrams; const el1=document.getElementById(`tb-est-stones-${r.id}`); if(el1) el1.innerText=est.estStones; const el2=document.getElementById(`tb-est-grams-${r.id}`); if(el2) el2.innerText=est.estGrams+'g'; const el3=document.getElementById(`tb-total-carats-${r.id}`); if(el3) el3.innerText=(Number(r.tbManualCarats)||((Number(r.tbManualStones)||est.estStones)*est.caratPerStone)).toFixed(2); } if(r.category!=='tennisBracelet') { let mc=0, fc=0; (r.melee||[]).forEach((m,i)=>{ mc+=(Number(m.qty)||0)*Number(m.carat); const e=document.getElementById(`quote-melee-row-${state.quoteSession.rings.indexOf(r)}-${i}`); if(e) e.innerText=((Number(m.qty)||0)*Number(m.carat)).toFixed(3); }); (r.fancy||[]).forEach((f,i)=>{ const fd=(FANCY_SHAPES[f.shape]||[])[f.sizeIdx]||{carat:0}; fc+=(Number(f.qty)||0)*Number(fd.carat); const e=document.getElementById(`quote-fancy-row-${state.quoteSession.rings.indexOf(r)}-${i}`); if(e) e.innerText=((Number(f.qty)||0)*Number(fd.carat)).toFixed(3); }); const elT=document.getElementById(`quote-total-melee-cts-${r.id}`); if(elT) elT.innerText=(mc+fc).toFixed(3); } const cost=calculateRingCost(r), raw=calculateRawCost(r), dVal=Number(r.discount)||0, dAmt=r.discountType==='%'?cost*(dVal/100):dVal; grandTotal+=cost; rawTotal+=raw; discountTotal+=dAmt; const rt=document.getElementById(`quote-ring-total-${r.id}`); if(rt) rt.innerText=`$${cost.toFixed(2)}`; const rc=document.getElementById(`quote-raw-cost-${r.id}`); if(rc) rc.innerText=`Raw Cost: $${raw.toFixed(2)}`; }); const sub = Math.max(0, grandTotal-discountTotal-(Number(state.quoteSession.scrapCredit)||0)); const ft = document.getElementById('quote-final-total'); if(ft) ft.innerText=`$${(sub+(state.quoteSession.applyTax?sub*0.12:0)).toFixed(2)}`; const fr = document.getElementById('quote-raw-total'); if(fr) fr.innerText=`Total Raw Cost: $${rawTotal.toFixed(2)}`; const sw = document.getElementById('quote-ring-subtotals'); if(sw) sw.innerHTML=state.quoteSession.rings.filter(x=>hasRingData(x)).map((r,i)=>{ const c=calculateRingCost(r), d=Number(r.discount)||0, da=r.discountType==='%'?c*(d/100):d; return `<span class="inline-block bg-brand-800 text-brand-300 px-3 py-1.5 rounded-lg text-[10px] uppercase font-bold mr-2 mb-2 shadow-inner">${{customRing:'Eng',weddingBand:'Wed',mensBand:"Men's",pendant:'Pend',tennisBracelet:'Tennis'}[r.category]} ${i+1}: $${(c-da).toFixed(2)}</span>`; }).join(''); }
+        function saveRingQuote() { if (!state.quoteSession.cName) return alert("Client name is required to save."); let grandTotal = 0, discountTotal = 0; state.quoteSession.rings.forEach(r => { const cost = calculateRingCost(r); grandTotal += cost; const dVal = Number(r.discount) || 0; discountTotal += r.discountType === '%' ? cost * (dVal / 100) : dVal; }); const subtotal = Math.max(0, grandTotal - discountTotal - (Number(state.quoteSession.scrapCredit)||0)); const record = { id: state.quoteSession.id, date: new Date().toLocaleString(), name: state.quoteSession.cName, phone: state.quoteSession.cPhone, summary: state.quoteSession.rings.map(r => `${{customRing:'Ring',weddingBand:'Band',mensBand:"Men",pendant:'Pend',tennisBracelet:'Tennis'}[r.category]}: ${r.goldGrams}g`).join(' | ') || "Consultation", total: `$${(subtotal + (state.quoteSession.applyTax ? subtotal * 0.12 : 0)).toFixed(2)}`, fullData: JSON.parse(JSON.stringify(state.quoteSession)) }; const idx = state.ringQuoteTransactions.findIndex(q => q.id === state.quoteSession.id); if(idx >= 0) state.ringQuoteTransactions[idx] = record; else state.ringQuoteTransactions.unshift(record); localStorage.setItem('gr_quote_ledger', JSON.stringify(state.ringQuoteTransactions)); state.quoteSession = getEmptyQuoteSession(); window.render(); alert("Consultation Saved to Ledger."); }
+        function loadQuoteIntoEditor(id) { const q = state.ringQuoteTransactions.find(x => x.id === id); if(!q) return; state.quoteSession = JSON.parse(JSON.stringify(q.fullData)); state.quoteSession.id = id; state.quoteSession.rings.forEach(r => { if(!r.fancy) r.fancy = []; if(!r.metalColor) r.metalColor = 'Yellow'; if(r.discount === undefined) r.discount = ''; if(!r.discountType) r.discountType = '$'; }); if(state.quoteSession.taxGST || state.quoteSession.taxPST) state.quoteSession.applyTax = true; state.activeTab = 'quote'; state.modal = null; window.render(); }
+        function saveSystemSettings() { localStorage.setItem('gr_master_settings', JSON.stringify(state.settings)); const btn = document.getElementById('save-settings-btn'); if (btn) { btn.innerText = "Settings Saved!"; btn.className = "bg-green-600 text-white font-bold py-2.5 px-6 rounded-xl shadow-md text-xs uppercase tracking-wider transition-colors"; setTimeout(() => { btn.innerText = "Save Default Settings"; btn.className = "bg-brand-800 text-brand-gold font-bold py-2.5 px-6 rounded-xl shadow-md text-xs uppercase tracking-wider hover:bg-brand-900 transition-colors"; }, 2000); } }
 
-        function saveSketch() {
-            const canvas = document.getElementById('sketch-canvas'); const exportCanvas = document.createElement('canvas');
-            exportCanvas.width = canvas.width; exportCanvas.height = canvas.height; const ctx = exportCanvas.getContext('2d');
-            ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, exportCanvas.width, exportCanvas.height);
-            if (bgImageObj) {
-                ctx.save();
-                const cx = imgState.x + (imgState.width * imgState.scale) / 2; const cy = imgState.y + (imgState.height * imgState.scale) / 2;
-                ctx.translate(cx, cy); ctx.rotate(imgState.rot * Math.PI / 180); ctx.translate(-cx, -cy);
-                ctx.drawImage(bgImageObj, imgState.x, imgState.y, imgState.width * imgState.scale, imgState.height * imgState.scale);
-                ctx.restore();
-            }
-            ctx.drawImage(canvas, 0, 0); 
-            const dataUrl = exportCanvas.toDataURL('image/jpeg', 0.8);
-            if(state.editingImageType === 'photo') state.quoteSession.referencePhoto = dataUrl;
-            else state.quoteSession.referenceSketch = dataUrl;
-            state.isSketching = false; window.render();
-        }
-
-        // --- GLOBAL DATA HANDLERS ---
-        function calculateScrapTotal() {
-            let gross = state.scrapItems.reduce((total, item) => {
-                const w = Number(item.weight) || 0; const r = Number(item.rate) || 0; if (!w) return total;
-                const spot = (state.spotPrices[item.material] || 0) / TROY_ONCE_GRAMS;
-                const pf = item.material === 'gold' ? item.purity / 24 : item.purity;
-                return total + (w * pf * spot * (r / 100));
-            }, 0);
-            return Math.max(0, gross - ((Number(state.stoneRemovalQty) || 0) * 5));
-        }
-
-        async function fetchLivePrices() {
-            if (GOLD_API_KEY.includes('INSERT')) return alert("Please set your live GoldAPI token inside the code.");
-            state.syncStatus = "Fetching..."; window.updateSpotUI(); window.render();
-            try {
-                const headers = { 'x-access-token': GOLD_API_KEY, 'Content-Type': 'application/json' };
-                const res = await Promise.all(['XAU', 'XAG', 'XPT'].map(m => fetch(`https://www.goldapi.io/api/${m}/CAD`, { headers }).then(r => r.json())));
-                state.spotPrices.gold = res[0].price; state.spotPrices.silver = res[1].price; state.spotPrices.platinum = res[2].price;
-                state.lastUpdated = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }); 
-                state.syncStatus = `Synced (${state.lastUpdated})`;
-                window.updateScrapUI(); window.updateSpotUI(); window.render();
-            } catch (e) { state.syncStatus = 'Error'; window.updateSpotUI(); window.render(); alert("Network error: " + e.message); }
-        }
-
-        function updateScrapUI() {
-            let gross = 0;
-            state.scrapItems.forEach((item, idx) => {
-                const w = Number(item.weight) || 0; const r = Number(item.rate) || 0;
-                const spot = (state.spotPrices[item.material] || 0) / TROY_ONCE_GRAMS;
-                const pf = item.material === 'gold' ? item.purity / 24 : item.purity;
-                const rowTotal = w * pf * spot * (r / 100); gross += rowTotal;
-                const el = document.getElementById(`scrap-row-total-${idx}`); if (el) el.innerText = '$' + rowTotal.toFixed(2);
-            });
-            const finalTot = Math.max(0, gross - ((Number(state.stoneRemovalQty) || 0) * 5));
-            const grandEl = document.getElementById('scrap-grand-total'); if (grandEl) grandEl.innerText = '$' + finalTot.toFixed(2);
-        }
-
-        function calculateQuickRawCost() {
-            const grams = Number(state.quickCalcGrams) || 0; if (!grams) return "0.00";
-            const [metal, spec] = state.quickCalcPurity.split('_');
-            const spot = (state.spotPrices[metal] || 0) / TROY_ONCE_GRAMS;
-            const factor = metal === 'gold' ? Number(spec) / 24 : Number(spec);
-            return (grams * spot * factor).toFixed(2);
-        }
-
-        function updateSpotUI() {
-            const qTotal = document.getElementById('spot-quick-total'); if(qTotal) qTotal.innerText = '$' + window.calculateQuickRawCost();
-        }
-
-        function saveScrapTransaction() {
-            if (!state.customerName || !state.scrapItems[0].weight) return alert("Enter client name and at least one item.");
-            const log = state.scrapItems.filter(i => i.weight).map(i => `${i.weight}g ${i.material}`).join(', ');
-            state.scrapTransactions.unshift({ id: genId(), date: new Date().toLocaleString(), name: state.customerName, phone: state.phoneNumber, summary: log, total: window.calculateScrapTotal().toFixed(2), image: state.scrapImage });
-            localStorage.setItem('gr_scrap_ledger', JSON.stringify(state.scrapTransactions));
-            state.customerName = ''; state.phoneNumber = ''; state.address = ''; state.driversLicense = ''; state.stoneRemovalQty = ''; state.scrapImage = null; state.scrapItems = [{ weight: '', material: 'gold', purity: 14, rate: 85 }];
-            window.render(); alert("Scrap logged successfully.");
-        }
-
-        function applyScrapCredit(id) {
-            const t = state.scrapTransactions.find(x => x.id === id);
-            if(t) { state.quoteSession.scrapCredit = Number(String(t.total).replace(/[^0-9.-]+/g,"")); state.modal = null; window.updateQuoteTotals(); window.render(); }
-        }
-
-        function updateQuoteTotals() {
-            if(!state.quoteSession || !state.quoteSession.rings) return;
-            let grandTotal = 0; let rawTotal = 0; let discountTotal = 0;
-
-            state.quoteSession.rings.forEach((r, ringIdx) => {
-                if(r.category === 'mensBand') {
-                    const mbSz = Number(r.mbSize) || 0; const mbW = Number(r.mbWidth) || 0; const mbT = Number(r.mbThickness) || 0;
-                    if (mbSz && mbW && mbT) {
-                        const diameter = 11.63 + (0.8128 * mbSz); const vol_cm3 = (mbW * mbT * Math.PI * (diameter + mbT)) / 1000;
-                        const density = r.material==='gold' ? DENSITIES.gold[r.goldKarat] : (r.material==='silver'?DENSITIES.silver:DENSITIES.platinum);
-                        r.goldGrams = (vol_cm3 * density).toFixed(2);
-                    } else { r.goldGrams = ''; }
-                    const elW = document.getElementById(`mb-calc-weight-${r.id}`); if (elW) elW.innerText = r.goldGrams ? r.goldGrams + 'g' : '0.00g';
-                }
-                else if(r.category === 'tennisBracelet') {
-                    const est = window.getTennisEstimates(r);
-                    const elES = document.getElementById(`tb-est-stones-${r.id}`); if(elES) elES.innerText = est.estStones;
-                    const elEG = document.getElementById(`tb-est-grams-${r.id}`); if(elEG) elEG.innerText = est.estGrams + 'g';
-                    
-                    const finalStones = Number(r.tbManualStones) || est.estStones;
-                    const finalGrams = Number(r.tbManualGrams) || est.estGrams; 
-                    const finalCarats = Number(r.tbManualCarats) || (finalStones * est.caratPerStone);
-                    r.goldGrams = finalGrams; 
-                    const elTC = document.getElementById(`tb-total-carats-${r.id}`); if(elTC) elTC.innerText = finalCarats.toFixed(2);
-                }
-
-                if(r.category !== 'tennisBracelet') {
-                    let ringMeleeCts = 0;
-                    (r.melee || []).forEach((m, mIdx) => {
-                        const c = (Number(m.qty) || 0) * Number(m.carat); ringMeleeCts += c;
-                        const elM = document.getElementById(`quote-melee-row-${ringIdx}-${mIdx}`); if (elM) elM.innerText = c.toFixed(3);
-                    });
-                    let ringFancyCts = 0;
-                    (r.fancy || []).forEach((f, fIdx) => {
-                        const activeFancy = FANCY_SHAPES[f.shape] || []; const fData = activeFancy[f.sizeIdx] || {carat:0};
-                        const c = (Number(f.qty) || 0) * Number(fData.carat); ringFancyCts += c;
-                        const elF = document.getElementById(`quote-fancy-row-${ringIdx}-${fIdx}`); if (elF) elF.innerText = c.toFixed(3);
-                    });
-                    const elTM = document.getElementById(`quote-total-melee-cts-${r.id}`); if (elTM) elTM.innerText = (ringMeleeCts + ringFancyCts).toFixed(3);
-                }
-
-                const rCost = window.calculateRingCost(r); const rawCost = window.calculateRawCost(r);
-                const dVal = Number(r.discount) || 0;
-                const rDiscountAmt = r.discountType === '%' ? rCost * (dVal / 100) : dVal;
-                
-                grandTotal += rCost; rawTotal += rawCost; discountTotal += rDiscountAmt;
-
-                const elRT = document.getElementById(`quote-ring-total-${r.id}`); if (elRT) elRT.innerText = `$${rCost.toFixed(2)}`;
-                const elRC = document.getElementById(`quote-raw-cost-${r.id}`); if (elRC) elRC.innerText = `Raw Cost: $${rawCost.toFixed(2)}`;
-            });
-
-            const subtotal = Math.max(0, grandTotal - discountTotal - (Number(state.quoteSession.scrapCredit)||0));
-            const taxMult = state.quoteSession.applyTax ? 0.12 : 0.0;
-            const finalAmount = subtotal + (subtotal * taxMult);
-
-            const elFT = document.getElementById('quote-final-total'); if (elFT) elFT.innerText = `$${Math.max(0, finalAmount).toFixed(2)}`;
-            const elFRT = document.getElementById('quote-raw-total'); if (elFRT) elFRT.innerText = `Total Raw Cost: $${rawTotal.toFixed(2)}`;
-            
-            const subWrap = document.getElementById('quote-ring-subtotals');
-            if(subWrap) {
-                const labels = {customRing:'Eng', weddingBand:'Wed', mensBand:"Men's", pendant:'Pend', tennisBracelet:'Tennis'};
-                subWrap.innerHTML = state.quoteSession.rings.filter(x=>window.hasRingData(x)).map((r,i) => {
-                    let cost = window.calculateRingCost(r); 
-                    let dVal = Number(r.discount) || 0;
-                    let rDiscountAmt = r.discountType === '%' ? cost * (dVal / 100) : dVal;
-                    return `<span class="inline-block bg-brand-800 text-brand-300 px-3 py-1.5 rounded-lg text-[10px] uppercase font-bold mr-2 mb-2 shadow-inner">${labels[r.category]} ${i+1}: $${(cost-rDiscountAmt).toFixed(2)}</span>`;
-                }).join('');
-            }
-        }
-
-        function saveRingQuote() {
-            if (!state.quoteSession.cName) return alert("Client name is required to save.");
-            let grandTotal = 0; let totalDiscount = 0;
-            state.quoteSession.rings.forEach(r => { 
-                const cost = window.calculateRingCost(r);
-                grandTotal += cost; 
-                const dVal = Number(r.discount) || 0;
-                totalDiscount += r.discountType === '%' ? cost * (dVal / 100) : dVal;
-            });
-            const subtotal = Math.max(0, grandTotal - totalDiscount - (Number(state.quoteSession.scrapCredit)||0));
-            const finalAmount = subtotal + (state.quoteSession.applyTax ? subtotal * 0.12 : 0);
-
-            const labels = {customRing:'Ring', weddingBand:'Band', mensBand:"Men", pendant:'Pend', tennisBracelet:'Tennis'};
-            const summary = state.quoteSession.rings.map(r => `${labels[r.category]}: ${r.goldGrams}g`).join(' | ') || "Consultation";
-            const record = {
-                id: state.quoteSession.id, date: new Date().toLocaleString(), name: state.quoteSession.cName, phone: state.quoteSession.cPhone,
-                summary: summary, total: `$${finalAmount.toFixed(2)}`, fullData: JSON.parse(JSON.stringify(state.quoteSession))
-            };
-
-            const idx = state.ringQuoteTransactions.findIndex(q => q.id === state.quoteSession.id);
-            if(idx >= 0) state.ringQuoteTransactions[idx] = record; else state.ringQuoteTransactions.unshift(record);
-            
-            localStorage.setItem('gr_quote_ledger', JSON.stringify(state.ringQuoteTransactions));
-            state.quoteSession = getEmptyQuoteSession();
-            window.render(); alert("Consultation Saved to Ledger.");
-        }
-
-        function loadQuoteIntoEditor(id) {
-            const q = state.ringQuoteTransactions.find(x => x.id === id); if(!q) return;
-            state.quoteSession = JSON.parse(JSON.stringify(q.fullData));
-            state.quoteSession.id = id; 
-            
-            state.quoteSession.rings.forEach(r => {
-                if(!r.fancy) r.fancy = [];
-                if(!r.metalColor) r.metalColor = 'Yellow';
-                if(r.discount === undefined) r.discount = '';
-                if(!r.discountType) r.discountType = '$';
-            });
-            if(state.quoteSession.taxGST || state.quoteSession.taxPST) state.quoteSession.applyTax = true;
-            state.activeTab = 'quote'; state.modal = null; window.render();
-        }
-
-        function saveSystemSettings() {
-            localStorage.setItem('gr_master_settings', JSON.stringify(state.settings));
-            const btn = document.getElementById('save-settings-btn');
-            if (btn) {
-                btn.innerText = "Settings Saved!"; btn.className = "bg-green-600 text-white font-bold py-2.5 px-6 rounded-xl shadow-md text-xs uppercase tracking-wider transition-colors";
-                setTimeout(() => { btn.innerText = "Save Default Settings"; btn.className = "bg-brand-800 text-brand-gold font-bold py-2.5 px-6 rounded-xl shadow-md text-xs uppercase tracking-wider hover:bg-brand-900 transition-colors"; }, 2000);
-            }
-        }
-
-        // --- SIGNATURE & PDF ---
+        // --- PDF AND SIGNATURE ---
         let sigPadCtx, isSigning = false;
-        function initSignaturePad() {
-            const canvas = document.getElementById('signature-pad'); if(!canvas) return;
-            const rect = canvas.getBoundingClientRect(); canvas.width = rect.width; canvas.height = rect.height;
-            sigPadCtx = canvas.getContext('2d'); sigPadCtx.lineWidth = 2; sigPadCtx.lineCap = 'round';
-            canvas.addEventListener('pointerdown', (e)=>{ isSigning=true; sigPadCtx.beginPath(); sigPadCtx.moveTo(e.offsetX, e.offsetY); });
-            canvas.addEventListener('pointermove', (e)=>{ if(isSigning) { sigPadCtx.lineTo(e.offsetX, e.offsetY); sigPadCtx.stroke(); } });
-            window.addEventListener('pointerup', ()=>{ isSigning=false; });
-        }
-        function saveSignature() {
-            const canvas = document.getElementById('signature-pad');
-            if(canvas) { state.quoteSession.signatureImg = canvas.toDataURL(); window.render(); }
-        }
+        function initSignaturePad() { const canvas = document.getElementById('signature-pad'); if(!canvas) return; const rect = canvas.getBoundingClientRect(); canvas.width = rect.width; canvas.height = rect.height; sigPadCtx = canvas.getContext('2d'); sigPadCtx.lineWidth = 2; sigPadCtx.lineCap = 'round'; canvas.addEventListener('pointerdown', (e)=>{ isSigning=true; sigPadCtx.beginPath(); sigPadCtx.moveTo(e.offsetX, e.offsetY); }); canvas.addEventListener('pointermove', (e)=>{ if(isSigning) { sigPadCtx.lineTo(e.offsetX, e.offsetY); sigPadCtx.stroke(); } }); window.addEventListener('pointerup', ()=>{ isSigning=false; }); }
+        function saveSignature() { const canvas = document.getElementById('signature-pad'); if(canvas) { state.quoteSession.signatureImg = canvas.toDataURL(); window.render(); } }
         function clearSignature() { state.quoteSession.signatureImg = null; window.render(); }
+        async function generatePDF(targetId = 'pdf-content', saveName = '') { window.scrollTo(0,0); const el = document.getElementById(targetId); if(!el) return; const btnRow = document.getElementById('pdf-action-buttons'); if(btnRow) btnRow.style.display = 'none'; const hideEls = el.querySelectorAll('.print-hide'); hideEls.forEach(h => h.style.display = 'none'); const originalClasses = el.className; const originalParent = el.parentNode; document.body.appendChild(el); el.className = 'bg-white p-12 mx-auto text-black border-none shadow-none w-[800px] block absolute top-0 left-0 z-[-1]'; try { const canvas = await html2canvas(el, { scale: 2, useCORS: true, backgroundColor: '#ffffff', scrollY: -window.scrollY }); const imgData = canvas.toDataURL('image/jpeg', 1.0); const { jsPDF } = window.jspdf; const pdfWidth = 215.9; const pageHeight = 279.4; const margin = 12; const printWidth = pdfWidth - (margin * 2); const imgHeight = (canvas.height * printWidth) / canvas.width; const pdf = new jsPDF('p', 'mm', [pdfWidth, Math.max(pageHeight, imgHeight + (margin * 2))]); pdf.addImage(imgData, 'JPEG', margin, margin, printWidth, imgHeight); pdf.save(`Quote_${saveName || state.quoteSession.cName || 'Client'}.pdf`); } catch (e) { alert("PDF Generation Error: " + e.message); } el.className = originalClasses; originalParent.appendChild(el); if(btnRow) btnRow.style.display = 'flex'; hideEls.forEach(h => h.style.display = ''); }
 
-        async function generatePDF(targetId = 'pdf-content', saveName = '') {
-            window.scrollTo(0,0);
-            const el = document.getElementById(targetId); if(!el) return;
-            
-            const btnRow = document.getElementById('pdf-action-buttons');
-            if(btnRow) btnRow.style.display = 'none';
+        // --- UTILS ---
+        function exportCSV(type) { let csv = ""; if (type === 'scrap') { csv = "Date,Client,Phone,Summary,Total\n"; (state.scrapTransactions || []).forEach(t => { if(t) csv += `"${t.date || ''}","${t.name || ''}","${t.phone || ''}","${(t.summary||'').replace(/"/g, '""')}","${t.total || 0}"\n`; }); } else { csv = "Date,Client,Phone,Total Price\n"; (state.ringQuoteTransactions || []).forEach(q => { if(q) csv += `"${q.date || ''}","${q.name || ''}","${q.phone || ''}","${q.total || 0}"\n`; }); } const blob = new Blob([csv], { type: 'text/csv' }); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = `${type}_Ledger_Export_${new Date().toISOString().slice(0,10)}.csv`; document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url); }
+        function clearHistory() { const range = document.getElementById('clear-history-range').value; const startDateEl = document.getElementById('clear-start-date').value; const endDateEl = document.getElementById('clear-end-date').value; if (!confirm("WARNING: Are you sure you want to delete ledger history? Ensure you have exported a backup first!")) return; let fS = [], fQ = []; const safeS = Array.isArray(state.scrapTransactions) ? state.scrapTransactions : []; const safeQ = Array.isArray(state.ringQuoteTransactions) ? state.ringQuoteTransactions : []; if (range === 'all') { fS = []; fQ = []; } else if (range === '365') { const cutoff = new Date(); cutoff.setDate(cutoff.getDate() - 365); fS = safeS.filter(t => t && new Date(t.date) > cutoff); fQ = safeQ.filter(t => t && new Date(t.date) > cutoff); } else if (range === 'custom') { if (!startDateEl || !endDateEl) return alert("Select start and end dates."); const start = new Date(startDateEl); start.setHours(0,0,0,0); const end = new Date(endDateEl); end.setHours(23,59,59,999); fS = safeS.filter(t => { if(!t) return false; const d = new Date(t.date); return d < start || d > end; }); fQ = safeQ.filter(t => { if(!t) return false; const d = new Date(t.date); return d < start || d > end; }); } state.scrapTransactions = fS; state.ringQuoteTransactions = fQ; localStorage.setItem('gr_scrap_ledger', JSON.stringify(fS)); localStorage.setItem('gr_quote_ledger', JSON.stringify(fQ)); window.render(); alert("Ledger records purged."); }
+        function handleImageUpload(e, key) { const file = e.target.files[0]; if(!file) return; const r = new FileReader(); r.onload = ev => { const img = new Image(); img.onload = () => { const canvas = document.createElement('canvas'); const max = 800; let w=img.width, h=img.height; if(w>max){h*=(max/w); w=max;} canvas.width=w; canvas.height=h; canvas.getContext('2d').drawImage(img, 0, 0, w, h); if(key==='scrap') state.scrapImage = canvas.toDataURL('image/jpeg', 0.6); else state.quoteSession.referencePhoto = canvas.toDataURL('image/jpeg', 0.6); window.render(); }; img.src = ev.target.result; }; r.readAsDataURL(file); }
+        function showScrapDetails(id) { state.modal = { type: 'scrapReceipt', id: id }; window.render(); }
+        function showQuoteDetails(id) { state.modal = { type: 'quoteReceipt', id: id }; window.render(); }
+        function openScrapLinkModal() { state.modal = { type: 'scrapLink', title: 'Apply Scrap Credit' }; window.render(); }
+        function deleteLedgerItem(type, id) { state.modal = { title: 'Confirm Deletion', message: 'Permanently delete this record from the history ledger database?', onConfirm: () => { if(type === 'scrap') { state.scrapTransactions = state.scrapTransactions.filter(t => t.id !== id); localStorage.setItem('gr_scrap_ledger', JSON.stringify(state.scrapTransactions)); } else { state.ringQuoteTransactions = state.ringQuoteTransactions.filter(q => q.id !== id); localStorage.setItem('gr_quote_ledger', JSON.stringify(state.ringQuoteTransactions)); } state.modal = null; window.render(); } }; window.render(); }
+        function confirmDeleteRing(ringId) { state.modal = { title: 'Remove Item', message: 'Permanently delete this piece from the consultation stack?', onConfirm: () => { state.quoteSession.rings = state.quoteSession.rings.filter(x => x.id !== ringId); state.quoteSession.activeSubTab = 'summary'; state.modal = null; window.updateQuoteTotals(); window.render(); } }; window.render(); }
 
-            const hideEls = el.querySelectorAll('.print-hide');
-            hideEls.forEach(h => h.style.display = 'none');
-
-            const originalClasses = el.className; 
-            el.className = 'bg-white p-12 mx-auto text-black border-none shadow-none w-[800px] block'; 
-            
-            try {
-                const canvas = await html2canvas(el, { scale: 2, useCORS: true, backgroundColor: '#ffffff' });
-                const imgData = canvas.toDataURL('image/jpeg', 1.0);
-                const { jsPDF } = window.jspdf; 
-                
-                const pdfWidth = 215.9; // Letter width mm
-                const pageHeight = 279.4; // Letter height mm
-                const margin = 12; // 12mm margins
-                const printWidth = pdfWidth - (margin * 2);
-                const imgHeight = (canvas.height * printWidth) / canvas.width;
-                
-                const pdf = new jsPDF('p', 'mm', [pdfWidth, Math.max(pageHeight, imgHeight + (margin * 2))]);
-                pdf.addImage(imgData, 'JPEG', margin, margin, printWidth, imgHeight);
-                pdf.save(`Quote_${saveName || state.quoteSession.cName || 'Client'}.pdf`);
-            } catch (e) {
-                alert("PDF Generation Error: " + e.message);
-            }
-            
-            el.className = originalClasses;
-            if(btnRow) btnRow.style.display = 'flex';
-            hideEls.forEach(h => h.style.display = '');
+        // --- RENDER ROUTER ---
+        function render() {
+            const app = document.getElementById('app');
+            app.innerHTML = `
+                <div class="flex flex-col items-center mb-6 pt-4 relative">
+                    ${(state.activeTab === 'quote' || state.activeTab === 'settings') ? `<div class="absolute right-0 top-0"><button onclick="window.toggleAdminMode()" class="px-4 py-1.5 rounded-xl text-[10px] font-bold uppercase tracking-widest border transition-colors ${state.isAdminMode ? 'bg-yellow-600 text-white border-yellow-700 shadow-md' : 'bg-white text-brand-400 border-brand-200'}">Admin Mode: ${state.isAdminMode?'ON':'OFF'}</button></div>` : ''}
+                    <h1 class="font-serif text-5xl italic text-brand-900 tracking-wide drop-shadow-sm">Gold and Rose</h1>
+                    <p class="text-[10px] text-brand-400 uppercase tracking-[0.3em] font-bold mt-3">Executive Operations Dashboard</p>
+                </div>
+                <div class="flex border-b border-brand-200 mb-6 bg-white rounded-t-2xl px-4 pt-4 shadow-sm overflow-x-auto hide-scrollbar">
+                    ${[{id:'scrap_calculator', label:'Scrap Calculator'}, {id:'quote', label:'Custom Quote'}, {id:'spot_price', label:'Spot Price'}, {id:'settings', label:'Settings'}, {id:'ledger', label:'Ledger History'}].map(t => `<button onclick="state.activeTab='${t.id}'; window.render()" class="py-3 px-5 font-bold text-sm md:text-base whitespace-nowrap border-b-4 transition-colors ${state.activeTab === t.id ? 'bg-brand-50 text-brand-900 border-brand-800' : 'border-transparent text-brand-500 hover:text-brand-700'}">${t.label}</button>`).join('')}
+                </div>
+                <div class="animate-fadeIn">
+                    ${state.activeTab === 'scrap_calculator' ? buildScrapHTML() : ''}
+                    ${state.activeTab === 'quote' ? buildQuoteTab() : ''}
+                    ${state.activeTab === 'spot_price' ? buildSpotHTML() : ''}
+                    ${state.activeTab === 'settings' ? buildSettingsHTML() : ''}
+                    ${state.activeTab === 'ledger' ? buildLedgerHTML() : ''}
+                </div>
+                ${buildModals()}
+                ${state.isSketching ? buildSketchHTML() : ''}
+            `;
+            if(state.activeTab === 'quote' && state.quoteSession.activeSubTab === 'summary') setTimeout(window.initSignaturePad, 100);
+            if(state.activeTab === 'quote' || state.activeTab === 'settings' || state.activeTab === 'spot_price' || state.activeTab === 'scrap_calculator') setTimeout(window.updateQuoteTotals, 0);
         }
 
-        // --- SHARED INVOICE HTML GENERATOR ---
-        function buildInvoiceHTML(sq, targetId, isHistory) {
+        // --- SUB BUILDERS ---
+        function buildSketchHTML() {
+            return `
+                <div class="fixed inset-0 bg-brand-100 z-[100] flex flex-col animate-fadeIn">
+                    <div class="flex justify-between items-center p-4 bg-brand-900 text-white shadow-md z-10 border-b border-brand-800">
+                        <h3 class="font-bold tracking-widest uppercase text-sm text-brand-gold">Design Sketchpad</h3>
+                        <div class="flex gap-3 items-center">
+                            <button onclick="window.clearSketch()" class="text-xs text-red-400 font-bold hover:text-red-300 px-3">Clear</button>
+                            <button onclick="state.isSketching=false; window.render()" class="text-xs text-brand-300 font-bold hover:text-white px-3 border-r border-brand-700 pr-5">Cancel</button>
+                            <button onclick="window.saveSketch()" class="text-xs bg-brand-gold text-brand-900 hover:bg-brand-goldHover px-5 py-2 rounded-lg font-black transition-all shadow-sm">Save</button>
+                        </div>
+                    </div>
+                    <div class="flex-1 relative overflow-hidden bg-white cursor-crosshair" id="sketch-container">
+                        <img id="sketch-bg" style="display: none; position: absolute; pointer-events: none;" />
+                        <div id="transform-box"><div id="handle-rotate" class="transform-handle">${ICONS.rotate}</div><div id="handle-scale" class="transform-handle">${ICONS.scale}</div></div>
+                        <canvas id="sketch-canvas" class="absolute inset-0 w-full h-full touch-none"></canvas>
+                    </div>
+                    <div class="absolute bottom-6 left-1/2 -translate-x-1/2 bg-white/95 backdrop-blur-xl px-4 py-3 rounded-2xl shadow-2xl border border-brand-200 flex flex-wrap justify-center gap-4 sm:gap-6 items-center z-20 w-[90%] sm:w-auto">
+                        <div class="flex gap-2 border-r pr-4 sm:pr-6 border-brand-200 text-brand-500">
+                            <button id="tool-pen" onclick="window.setSketchTool('pen')" class="p-2.5 bg-brand-gold/10 text-brand-gold rounded-xl shadow-inner border-2 border-brand-gold transition-all">${ICONS.pen}</button>
+                            <button id="tool-highlighter" onclick="window.setSketchTool('highlighter')" class="p-2.5 bg-transparent hover:bg-brand-50 rounded-xl border-2 border-transparent transition-all">${ICONS.highlighter}</button>
+                            <button id="tool-eraser" onclick="window.setSketchTool('eraser')" class="p-2.5 bg-transparent hover:bg-brand-50 rounded-xl border-2 border-transparent transition-all">${ICONS.eraser}</button>
+                            <button id="tool-transform" onclick="window.setSketchTool('transform')" class="p-2.5 bg-transparent hover:bg-brand-50 rounded-xl border-2 border-transparent transition-all">${ICONS.transform}</button>
+                        </div>
+                        <div class="flex flex-col gap-1 border-r pr-4 sm:pr-6 border-brand-200 items-center justify-center min-w-[80px]">
+                            <label class="cursor-pointer text-[10px] font-bold text-brand-700 bg-brand-100 px-3 py-1.5 rounded-lg hover:bg-brand-200 transition-all text-center flex items-center gap-1.5 shadow-sm">${ICONS.camera} Photo<input type="file" accept="image/*" class="hidden" onchange="window.handleSketchBgUpload(event)" /></label>
+                        </div>
+                        <div class="flex gap-2 sm:gap-3 border-r pr-4 sm:pr-6 border-brand-200">
+                            <button id="color-slate" onclick="window.setSketchColor('#1e293b', 'slate')" class="w-6 h-6 sm:w-8 sm:h-8 rounded-full bg-brand-800 border-2 border-brand-400 shadow-md scale-110 transition-all"></button>
+                            <button id="color-gold" onclick="window.setSketchColor('#d4af37', 'gold')" class="w-6 h-6 sm:w-8 sm:h-8 rounded-full bg-brand-gold border-2 border-transparent shadow-sm scale-100 transition-all"></button>
+                            <button id="color-red" onclick="window.setSketchColor('#dc2626', 'red')" class="w-6 h-6 sm:w-8 sm:h-8 rounded-full bg-red-600 border-2 border-transparent shadow-sm scale-100 transition-all"></button>
+                            <button id="color-green" onclick="window.setSketchColor('#16a34a', 'green')" class="w-6 h-6 sm:w-8 sm:h-8 rounded-full bg-green-600 border-2 border-transparent shadow-sm scale-100 transition-all"></button>
+                        </div>
+                        <div class="flex gap-3 sm:gap-4 items-center pl-2">
+                            <button id="thick-1" onclick="window.setSketchThickness(1.5, 1)" class="w-3.5 h-3.5 bg-brand-300 rounded-full hover:bg-brand-500 transition-all"></button>
+                            <button id="thick-2" onclick="window.setSketchThickness(3.0, 2)" class="w-5 h-5 bg-brand-gold rounded-full shadow-md transition-all"></button>
+                            <button id="thick-3" onclick="window.setSketchThickness(6.0, 3)" class="w-7 h-7 bg-brand-300 rounded-full hover:bg-brand-500 transition-all"></button>
+                        </div>
+                    </div>
+                </div>`;
+        }
+
+        function buildScrapHTML() {
+            return `
+                <div class="p-4 md:p-8 bg-white rounded-b-2xl rounded-tr-2xl shadow-lg border border-brand-100 space-y-8">
+                    <div class="relative bg-brand-900 rounded-[2rem] py-10 px-6 shadow-2xl text-center border border-brand-800 overflow-hidden">
+                        <div class="absolute right-5 top-5 flex items-center gap-2">
+                            ${state.syncStatus ? `<span class="text-[10px] font-bold text-green-400 uppercase tracking-widest bg-green-900/30 border border-green-800 px-2 py-1.5 rounded-md">✓ ${state.syncStatus}</span>` : ''}
+                            <button onclick="window.fetchLivePrices()" class="text-xs bg-brand-800 text-brand-gold px-4 py-2 rounded-xl font-bold hover:bg-brand-700 shadow-md transition-all border border-brand-700">Sync Market Rate</button>
+                        </div>
+                        <h3 class="text-brand-400 uppercase tracking-[0.2em] text-[10px] font-bold mt-4">Final Cash Offer (CAD)</h3>
+                        <p id="scrap-grand-total" class="text-6xl md:text-7xl font-black text-brand-gold tracking-tighter mt-2 drop-shadow-md">$${window.calculateScrapTotal().toFixed(2)}</p>
+                    </div>
+                    <div><h3 class="text-[10px] font-bold text-brand-500 uppercase tracking-widest pl-1 mb-2">Live Feed Anchors (per Oz)</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            ${['gold', 'silver', 'platinum'].map(m => `<div class="bg-white p-3 rounded-xl border border-brand-200 shadow-sm"><label class="text-[10px] font-bold text-brand-500 uppercase block mb-1">${m}</label><input type="number" class="w-full p-2 border rounded-lg font-bold bg-brand-50 text-brand-900 text-sm no-spinner shadow-sm" value="${state.spotPrices[m]}" oninput="state.spotPrices.${m}=Number(this.value); window.updateScrapUI(); window.updateSpotUI();" /></div>`).join('')}
+                        </div>
+                    </div>
+                    <div class="bg-brand-50 p-5 rounded-2xl border border-brand-200 space-y-4">
+                        <div class="flex justify-between items-center border-b border-brand-200 pb-2">
+                            <h3 class="text-xs font-bold text-brand-600 uppercase tracking-widest">Client Intake</h3>
+                            <label class="cursor-pointer text-xs bg-brand-800 text-white px-4 py-2 rounded-xl font-bold hover:bg-brand-900 transition-colors flex items-center gap-1.5 shadow-sm">${ICONS.camera} ${state.scrapImage?'Retake ID':'Scan ID'}<input type="file" accept="image/*" capture="environment" class="hidden" onchange="window.handleImageUpload(event, 'scrap')" /></label>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <input type="text" placeholder="Full Name" class="border p-3 rounded-xl text-sm shadow-sm" value="${state.customerName}" oninput="state.customerName=this.value" />
+                            <input type="tel" placeholder="Phone Number" class="border p-3 rounded-xl text-sm shadow-sm" value="${state.phoneNumber}" oninput="state.phoneNumber=this.value" />
+                            <input type="text" placeholder="Full Address" class="border p-3 rounded-xl text-sm md:col-span-2 shadow-sm" value="${state.address}" oninput="state.address=this.value" />
+                            <input type="text" placeholder="Driver's License / ID" class="border p-3 rounded-xl text-sm shadow-sm" value="${state.driversLicense}" oninput="state.driversLicense=this.value" />
+                            <div class="flex items-center border p-2 rounded-xl bg-white shadow-sm"><span class="text-[10px] font-bold text-brand-500 uppercase px-2">Stone Removal (-$5):</span><input type="number" class="w-full text-sm font-bold text-red-600 no-spinner" value="${state.stoneRemovalQty}" oninput="state.stoneRemovalQty=this.value; window.updateScrapUI()" /></div>
+                        </div>
+                    </div>
+                    <div class="bg-brand-100/50 p-4 rounded-2xl border border-brand-200 space-y-3">
+                        ${state.scrapItems.map((item, idx) => `
+                            <div class="grid grid-cols-1 md:grid-cols-[1.5fr_1.5fr_1.5fr_1fr_auto_auto] gap-3 items-center bg-white p-3 rounded-xl border shadow-sm">
+                                <input type="number" placeholder="Mass (g)" class="border p-2.5 rounded-lg text-sm font-bold no-spinner" value="${item.weight}" oninput="state.scrapItems[${idx}].weight=this.value; window.updateScrapUI()" />
+                                <select class="border p-2.5 rounded-lg text-sm font-bold bg-brand-50" onchange="state.scrapItems[${idx}].material=this.value; state.scrapItems[${idx}].purity=this.value==='gold'?14:0.95; state.scrapItems[${idx}].rate=this.value==='gold'?85:70; window.render()"><option value="gold" ${item.material==='gold'?'selected':''}>Gold</option><option value="silver" ${item.material==='silver'?'selected':''}>Silver</option><option value="platinum" ${item.material==='platinum'?'selected':''}>Platinum</option></select>
+                                <select class="border p-2.5 rounded-lg text-sm font-bold bg-brand-50" onchange="state.scrapItems[${idx}].purity=Number(this.value); window.updateScrapUI()">${PURITY_OPTIONS[item.material].map(p=>`<option value="${p}" ${p===item.purity?'selected':''}>${item.material==='gold'?p+'k':p}</option>`).join('')}</select>
+                                <div class="flex items-center gap-1"><input type="number" class="border p-2.5 rounded-lg text-sm font-bold w-full text-center" value="${item.rate}" oninput="state.scrapItems[${idx}].rate=this.value; window.updateScrapUI()" /><span class="text-xs font-bold text-brand-400">%</span></div>
+                                <div id="scrap-row-total-${idx}" class="text-sm font-black text-brand-900 pr-2 text-right">$0.00</div>
+                                <button onclick="state.scrapItems.splice(${idx},1); window.render()" class="text-red-400 font-bold px-2 hover:text-red-600 text-lg hidden md:block">&times;</button>
+                            </div>
+                        `).join('')}
+                        <button onclick="state.scrapItems.push({weight:'',material:'gold',purity:14,rate:85}); window.render()" class="w-full border-2 border-dashed border-brand-300 py-3 rounded-xl text-brand-600 font-bold text-sm bg-white hover:bg-brand-50 transition-colors">+ Add Entry</button>
+                    </div>
+                    <button onclick="window.saveScrapTransaction()" class="w-full bg-brand-800 text-brand-gold font-black text-sm tracking-widest uppercase py-4 rounded-xl shadow-md hover:bg-brand-900 transition-colors">Commit Payout Log</button>
+                </div>
+                ${(setTimeout(window.updateScrapUI, 0), '')}
+            `;
+        }
+
+        function buildQuoteTab() {
+            const sq = state.quoteSession;
+            return `
+                <div class="p-4 md:p-8 bg-white rounded-b-2xl rounded-tr-2xl shadow-lg border border-brand-100">
+                    <div class="mb-8 bg-brand-50 p-6 rounded-2xl border border-brand-200 shadow-sm">
+                        <h3 class="font-serif text-lg italic font-bold text-brand-800 border-b border-brand-200 pb-2 mb-4">Client Intake Profile</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-5 mb-5">
+                            <div><label class="text-[10px] font-bold text-brand-500 uppercase pl-1 block mb-1">Client Name</label><input type="text" class="border p-3 rounded-xl w-full text-sm shadow-sm" value="${sq.cName}" oninput="state.quoteSession.cName=this.value" /></div>
+                            <div><label class="text-[10px] font-bold text-brand-500 uppercase pl-1 block mb-1">Phone Number</label><input type="tel" class="border p-3 rounded-xl w-full text-sm shadow-sm" value="${sq.cPhone}" oninput="state.quoteSession.cPhone=this.value" /></div>
+                            <div><label class="text-[10px] font-bold text-brand-500 uppercase pl-1 block mb-1">Email</label><input type="email" class="border p-3 rounded-xl w-full text-sm shadow-sm" value="${sq.cEmail}" oninput="state.quoteSession.cEmail=this.value" /></div>
+                        </div>
+                        <div class="pt-5 border-t border-brand-200 flex flex-wrap items-center justify-between gap-4">
+                            <span class="text-[10px] font-bold text-brand-500 uppercase tracking-wider pl-1">Visual References</span>
+                            <div class="flex items-center gap-3">
+                                ${sq.referenceSketch ? `<div class="relative"><img src="${sq.referenceSketch}" onclick="window.editThumbnail('sketch')" class="w-12 h-12 object-cover rounded-lg border-2 border-brand-300 shadow-sm cursor-pointer hover:border-brand-gold transition-colors" /><button onclick="state.quoteSession.referenceSketch=null; window.render()" class="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-[10px] font-bold shadow-md hover:bg-red-600">&times;</button></div>` : ''}
+                                ${sq.referencePhoto ? `<div class="relative"><img src="${sq.referencePhoto}" onclick="window.editThumbnail('photo')" class="w-12 h-12 object-cover rounded-lg border-2 border-brand-300 shadow-sm cursor-pointer hover:border-brand-gold transition-colors" /><button onclick="state.quoteSession.referencePhoto=null; window.render()" class="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-[10px] font-bold shadow-md hover:bg-red-600">&times;</button></div>` : ''}
+                                <button onclick="window.editThumbnail('sketch')" class="text-xs bg-white text-brand-800 px-4 py-2.5 rounded-xl font-bold hover:bg-brand-100 transition-all flex items-center gap-2 shadow-sm border border-brand-200">${ICONS.pen} Sketch</button>
+                                <label class="cursor-pointer text-xs bg-brand-800 text-brand-gold px-4 py-2.5 rounded-xl font-bold hover:bg-brand-900 transition-colors flex items-center gap-2 shadow-sm">${ICONS.camera} Add Photo<input type="file" accept="image/*" class="hidden" onchange="window.handleImageUpload(event, 'photo')" /></label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mb-8 bg-brand-900 text-white p-8 rounded-[2rem] shadow-2xl relative overflow-hidden border border-brand-800 flex flex-col md:flex-row justify-between items-center gap-6">
+                        <div class="flex flex-col gap-2"><label class="flex items-center gap-2 text-[10px] font-bold text-brand-300 bg-brand-800 px-3 py-1.5 rounded-lg cursor-pointer border border-brand-700 hover:bg-brand-700 transition-colors w-max shadow-inner"><input type="checkbox" class="accent-brand-gold w-3 h-3" ${sq.applyTax?'checked':''} onchange="state.quoteSession.applyTax=this.checked; window.updateQuoteTotals()"> + Tax (12% BC)</label></div>
+                        <div class="text-center md:text-right"><h3 class="text-brand-400 uppercase tracking-[0.2em] text-[10px] font-bold">Session Grand Total</h3><div id="quote-ring-subtotals" class="mt-2 mb-1 min-h-[24px]"></div><p id="quote-final-total" class="text-6xl font-black text-brand-gold tracking-tighter mt-1 drop-shadow-md">$0.00</p><p id="quote-raw-total" class="admin-only text-sm text-green-400 font-mono mt-2 border-t border-brand-700 pt-2">Total Raw Cost: $0.00</p></div>
+                    </div>
+                    <div class="flex justify-center mb-6">
+                        <div class="bg-brand-100 p-1.5 rounded-2xl flex gap-1 shadow-inner border border-brand-200 overflow-x-auto w-full hide-scrollbar">
+                            ${sq.rings.map((r, i) => {
+                                let tabLabel = r.category==='customRing'?'Engagement':(r.category==='weddingBand'?'Wedding':(r.category==='mensBand'?"Men's":r.category==='pendant'?'Pendant':'Tennis'));
+                                return `<div class="flex items-center ${sq.activeSubTab === r.id ? 'bg-white shadow-md' : 'hover:bg-brand-200'} rounded-xl transition-all"><button onclick="state.quoteSession.activeSubTab='${r.id}'; window.render()" class="pl-5 pr-2 py-3 text-xs md:text-sm font-bold ${sq.activeSubTab === r.id ? 'text-brand-900' : 'text-brand-600'} whitespace-nowrap">${tabLabel} ${i>0?i+1:''}</button><button onclick="window.confirmDeleteRing('${r.id}')" class="pr-3 pl-1 text-brand-300 hover:text-red-500 font-bold text-xl transition-colors">&times;</button></div>`;
+                            }).join('')}
+                            <button onclick="state.modal={title:'Add Piece to Quote',type:'addRing'}; window.render()" class="px-5 py-3 rounded-xl text-xs md:text-sm font-bold text-brand-600 hover:bg-brand-200 whitespace-nowrap transition-colors">+ Add Piece</button>
+                            <button onclick="state.quoteSession.activeSubTab='summary'; window.render()" class="px-6 py-3 rounded-xl text-xs md:text-sm font-black whitespace-nowrap ml-auto transition-all ${sq.activeSubTab==='summary'?'bg-brand-gold text-brand-900 shadow-md border border-brand-goldHover hover:brightness-105':'bg-brand-gold/80 text-brand-900 hover:bg-brand-gold shadow-sm'}">Finalize</button>
+                        </div>
+                    </div>
+                    ${sq.activeSubTab === 'summary' ? window.buildQuoteSummary() : window.buildRingEditor(sq.activeSubTab)}
+                </div>
+            `;
+        }
+
+        window.buildRingEditor = function(ringId) {
+            const rIdx = state.quoteSession.rings.findIndex(r => r.id === ringId); if(rIdx === -1) return '';
+            const r = state.quoteSession.rings[rIdx];
+
+            if(r.category === 'tennisBracelet') {
+                const est = window.getTennisEstimates(r); const activeFancy = FANCY_SHAPES[r.tbShape] || [];
+                return `<div class="grid grid-cols-1 lg:grid-cols-2 gap-8 animate-fadeIn"><div class="space-y-4"><h3 class="font-serif text-xl italic font-bold text-brand-800 border-b border-brand-200 pb-2">Tennis Bracelet Calculator</h3><div class="bg-white p-5 rounded-2xl border border-brand-200 shadow-sm relative overflow-hidden"><div class="absolute left-0 top-0 w-1.5 h-full bg-brand-gold"></div><div class="grid grid-cols-2 gap-4"><div><label class="text-[10px] font-bold text-brand-500 uppercase block mb-1">Bracelet Length</label><select class="border p-3 rounded-xl w-full text-sm font-bold bg-brand-50 shadow-sm text-brand-800" onchange="state.quoteSession.rings[${rIdx}].tbLength=Number(this.value); window.updateQuoteTotals(); window.render()">${[6.0, 6.5, 7.0, 7.5, 8.0, 8.5, 9.0].map(L=>`<option value="${L}" ${Number(r.tbLength)===L?'selected':''}>${L} inches</option>`).join('')}</select></div><div><label class="text-[10px] font-bold text-brand-500 uppercase block mb-1">Stone Shape</label><select class="border p-3 rounded-xl w-full text-sm font-bold bg-brand-50 shadow-sm text-brand-800" onchange="state.quoteSession.rings[${rIdx}].tbShape=this.value; state.quoteSession.rings[${rIdx}].tbSizeIdx=0; window.updateQuoteTotals(); window.render()"><option value="Round" ${r.tbShape==='Round'?'selected':''}>Round</option>${Object.keys(FANCY_SHAPES).map(s=>`<option value="${s}" ${r.tbShape===s?'selected':''}>${s}</option>`).join('')}</select></div></div><div class="mt-4 pt-4 border-t border-brand-100"><label class="text-[10px] font-bold text-brand-500 uppercase block mb-1">Stone Size Selection</label>${r.tbShape === 'Round' ? `<select class="border p-3 rounded-xl w-full text-sm font-bold bg-white shadow-sm text-brand-800" onchange="state.quoteSession.rings[${rIdx}].tbSizeRound=this.value; window.updateQuoteTotals(); window.render()">${Object.keys(ROUND_MELEE).map(sz => `<option value="${sz}" ${r.tbSizeRound===sz?'selected':''}>${sz}mm (${ROUND_MELEE[sz]}ct ea)</option>`).join('')}</select>` : `<select class="border p-3 rounded-xl w-full text-sm font-bold bg-white shadow-sm text-brand-800" onchange="state.quoteSession.rings[${rIdx}].tbSizeIdx=Number(this.value); window.updateQuoteTotals(); window.render()">${activeFancy.map((sz,i)=>`<option value="${i}" ${r.tbSizeIdx===i?'selected':''}>${sz.label} (${sz.carat}ct ea)</option>`).join('')}</select>`}</div></div><div class="bg-brand-50 p-5 rounded-2xl border border-brand-200 grid grid-cols-2 gap-4"><div class="text-center p-3 bg-white rounded-xl shadow-sm border border-brand-100"><div class="text-[10px] font-bold text-brand-400 uppercase tracking-widest mb-1">Est. Stones</div><div id="tb-est-stones-${r.id}" class="text-2xl font-black text-brand-900">${est.estStones}</div></div><div class="text-center p-3 bg-white rounded-xl shadow-sm border border-brand-100"><div class="text-[10px] font-bold text-brand-400 tracking-widest uppercase mb-1">Est. Metal Weight</div><div id="tb-est-grams-${r.id}" class="text-2xl font-black text-brand-900">${est.estGrams}g</div></div></div><div class="bg-brand-800 p-5 rounded-2xl border border-brand-700 flex justify-between items-center shadow-md"><div class="text-xs font-bold text-brand-300 uppercase tracking-wider">Calculated Total Carats</div><div class="text-right"><span id="tb-total-carats-${r.id}" class="text-3xl font-black text-brand-gold">${(est.estStones * est.caratPerStone).toFixed(2)}</span> <span class="text-xs font-bold text-brand-400">cts</span></div></div></div><div class="space-y-5"><div class="bg-white p-5 rounded-2xl border border-brand-200 shadow-sm relative overflow-hidden"><div class="absolute left-0 top-0 w-1.5 h-full bg-brand-600"></div><div class="flex justify-between border-b border-brand-100 pb-3 mb-4"><h3 class="font-serif text-xl italic font-bold text-brand-800">Structural Metal</h3><div id="quote-ring-total-${r.id}" class="text-lg font-black text-brand-900">$0.00</div></div><div class="grid grid-cols-2 md:grid-cols-3 gap-4"><div><label class="text-[10px] font-bold text-brand-500 uppercase block mb-1">Elemental Base</label><select class="border p-3 rounded-xl w-full text-sm font-bold bg-brand-50 shadow-sm text-brand-800" onchange="state.quoteSession.rings[${rIdx}].material=this.value; window.updateQuoteTotals(); window.render()"><option value="gold" ${r.material==='gold'?'selected':''}>Gold</option><option value="platinum" ${r.material==='platinum'?'selected':''}>Platinum</option><option value="silver" ${r.material==='silver'?'selected':''}>Silver</option></select></div>${r.material==='gold'?`<div><label class="text-[10px] font-bold text-brand-500 uppercase block mb-1">Purity Tier</label><select class="border p-3 rounded-xl w-full text-sm font-bold bg-brand-50 shadow-sm text-brand-800" onchange="state.quoteSession.rings[${rIdx}].goldKarat=Number(this.value); window.updateQuoteTotals()">${PURITY_OPTIONS.gold.map(k=>`<option value="${k}" ${r.goldKarat===k?'selected':''}>${k}k Premium</option>`).join('')}</select></div><div><label class="text-[10px] font-bold text-brand-500 uppercase block mb-1">Color</label><select class="border p-3 rounded-xl w-full text-sm font-bold bg-brand-50 shadow-sm text-brand-800" onchange="state.quoteSession.rings[${rIdx}].metalColor=this.value; window.render()"><option ${r.metalColor==='Yellow'?'selected':''}>Yellow</option><option ${r.metalColor==='White'?'selected':''}>White</option><option ${r.metalColor==='Rose'?'selected':''}>Rose</option></select></div>` : ''}</div><div class="mt-4 pt-4 border-t border-brand-100 grid grid-cols-3 gap-3"><div><label class="text-[10px] font-bold text-brand-500 uppercase block mb-1">Override Stones</label><input type="number" class="border p-3 rounded-xl w-full text-xs font-bold shadow-sm placeholder-brand-300" placeholder="Links Count" value="${r.tbManualStones}" oninput="state.quoteSession.rings[${rIdx}].tbManualStones=this.value; window.updateQuoteTotals()" /></div><div><label class="text-[10px] font-bold text-brand-500 uppercase block mb-1">Override Grams</label><input type="number" class="border p-3 rounded-xl w-full text-xs font-bold shadow-sm placeholder-brand-300" placeholder="Exact Grams" value="${r.tbManualGrams}" oninput="state.quoteSession.rings[${rIdx}].tbManualGrams=this.value; window.updateQuoteTotals()" /></div><div><label class="text-[10px] font-bold text-brand-500 uppercase block mb-1">Override Carats</label><input type="number" class="border p-3 rounded-xl w-full text-xs font-bold shadow-sm placeholder-brand-300" placeholder="Total Ctw" value="${r.tbManualCarats}" oninput="state.quoteSession.rings[${rIdx}].tbManualCarats=this.value; window.updateQuoteTotals()" /></div></div><div id="quote-raw-cost-${r.id}" class="admin-only mt-3 text-right text-[10px] font-mono text-green-600 bg-green-50 p-2 rounded-lg border border-green-200">Raw Cost: $0.00</div></div><div class="bg-white p-5 rounded-2xl border border-brand-200 shadow-sm relative overflow-hidden"><div class="absolute left-0 top-0 w-1.5 h-full bg-brand-400"></div><label class="text-xs font-bold text-brand-700 uppercase tracking-widest block mb-2">Manual Addon / Fee</label><div class="flex gap-3 mb-4"><input type="number" class="border p-3 rounded-xl w-1/3 font-bold text-sm bg-brand-50 placeholder-brand-300 shadow-sm animate-none" placeholder="$0.00" value="${r.customAddon}" oninput="state.quoteSession.rings[${rIdx}].customAddon=this.value; window.updateQuoteTotals()" /><input type="text" class="border p-3 rounded-xl w-2/3 font-medium text-sm bg-brand-50 placeholder-brand-300 shadow-sm" placeholder="e.g. Premium Safety Clasp" value="${r.customAddonDesc || ''}" oninput="state.quoteSession.rings[${rIdx}].customAddonDesc=this.value" /></div><label class="text-xs font-bold text-brand-700 uppercase tracking-widest block mb-2">Design Notes (Finish, Details)</label><input type="text" class="border p-3 rounded-xl w-full font-medium text-sm bg-brand-50 placeholder-brand-300 shadow-sm" placeholder="e.g., Satin finish, custom inside engraving..." value="${r.ringNotes}" oninput="state.quoteSession.rings[${rIdx}].ringNotes=this.value" /></div></div></div>`;
+            }
+
+            return `
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 animate-fadeIn"><div class="space-y-4"><h3 class="font-serif text-xl italic font-bold text-brand-800 border-b border-brand-200 pb-2">Melee Configuration</h3><div class="bg-white rounded-2xl border border-brand-200 shadow-sm overflow-hidden text-xs"><div class="grid grid-cols-[2fr_1fr_1fr_1fr_auto] bg-brand-50 font-bold text-brand-600 text-[10px] uppercase p-3 border-b border-brand-200 gap-2"><div class="pl-1">Stone / Size</div><div class="text-center">Ct (ea)</div><div class="text-center">Qty</div><div class="text-right">Sum</div><div></div></div><div class="max-h-60 overflow-y-auto divide-y divide-brand-100 hide-scrollbar">${(r.melee||[]).map((m, mIdx) => `<div class="grid grid-cols-[2fr_1fr_1fr_1fr_auto] items-center p-2 gap-2"><select class="border p-2 rounded-lg font-bold bg-white shadow-sm w-full text-brand-800" onchange="state.quoteSession.rings[${rIdx}].melee[${mIdx}].size=this.value; state.quoteSession.rings[${rIdx}].melee[${mIdx}].carat=ROUND_MELEE[this.value]; window.updateQuoteTotals(); window.render()">${Object.keys(ROUND_MELEE).map(sz => `<option value="${sz}" ${m.size===sz?'selected':''}>${sz}mm Round</option>`).join('')}</select><div class="text-brand-500 font-mono text-center">${Number(m.carat).toFixed(3)}</div><input type="number" class="border p-2 rounded-lg text-center font-bold no-spinner w-full shadow-sm" placeholder="0" value="${m.qty}" oninput="state.quoteSession.rings[${rIdx}].melee[${mIdx}].qty=this.value; window.updateQuoteTotals()" /><div id="quote-melee-row-${rIdx}-${mIdx}" class="text-right font-bold text-brand-700 pr-1">0.000</div><button onclick="state.quoteSession.rings[${rIdx}].melee.splice(${mIdx},1); window.updateQuoteTotals(); window.render()" class="text-red-400 px-2 font-bold hover:text-red-600 text-lg transition-colors">&times;</button></div>`).join('')}${(r.fancy||[]).map((f, fIdx) => { const activeFancy = FANCY_SHAPES[f.shape] || []; return `<div class="grid grid-cols-[2fr_1fr_1fr_1fr_auto] items-center p-2 gap-2 bg-brand-50/30"><div class="flex gap-1"><select class="border p-2 rounded-lg font-bold bg-white shadow-sm w-1/2 text-[10px] text-brand-800" onchange="state.quoteSession.rings[${rIdx}].fancy[${fIdx}].shape=this.value; state.quoteSession.rings[${rIdx}].fancy[${fIdx}].sizeIdx=0; window.updateQuoteTotals(); window.render()">${Object.keys(FANCY_SHAPES).map(s=>`<option ${f.shape===s?'selected':''}>${s}</option>`).join('')}</select><select class="border p-2 rounded-lg font-bold bg-white shadow-sm w-1/2 text-[10px] text-brand-600" onchange="state.quoteSession.rings[${rIdx}].fancy[${fIdx}].sizeIdx=Number(this.value); window.updateQuoteTotals(); window.render()">${activeFancy.map((sz,i)=>`<option value="${i}" ${f.sizeIdx===i?'selected':''}>${sz.label}</option>`).join('')}</select></div><div class="text-brand-500 font-mono text-center">${(activeFancy[f.sizeIdx]?.carat||0).toFixed(3)}</div><input type="number" class="border p-2 rounded-lg text-center font-bold no-spinner w-full shadow-sm" placeholder="0" value="${f.qty}" oninput="state.quoteSession.rings[${rIdx}].fancy[${fIdx}].qty=this.value; window.updateQuoteTotals()" /><div id="quote-fancy-row-${rIdx}-${fIdx}" class="text-right font-bold text-brand-700 pr-1">0.000</div><button onclick="state.quoteSession.rings[${rIdx}].fancy.splice(${fIdx},1); window.updateQuoteTotals(); window.render()" class="text-red-400 px-2 font-bold hover:text-red-600 text-lg transition-colors">&times;</button></div>` }).join('')}</div><div class="p-3 border-t border-brand-100 bg-brand-50 flex gap-2"><button onclick="state.quoteSession.rings[${rIdx}].melee.push({size:'1.3',carat:0.01,qty:''}); window.render()" class="flex-1 bg-white text-[10px] uppercase font-bold text-brand-700 py-2.5 rounded-lg border border-brand-200 hover:border-brand-gold transition-colors">+ Add Round</button><button onclick="if(!state.quoteSession.rings[${rIdx}].fancy) state.quoteSession.rings[${rIdx}].fancy=[]; state.quoteSession.rings[${rIdx}].fancy.push({shape:'Princess',sizeIdx:0,qty:''}); window.render()" class="flex-1 bg-white text-[10px] uppercase font-bold text-brand-700 py-2.5 rounded-lg border border-brand-200 hover:border-brand-gold transition-colors">+ Add Fancy Cut</button></div></div><div class="p-4 bg-brand-800 rounded-xl flex justify-between items-center shadow-md border border-brand-700"><div class="text-xs font-bold text-brand-300 uppercase tracking-wider">Total Melee Carats</div><div class="text-right"><span id="quote-total-melee-cts-${r.id}" class="text-2xl font-black text-brand-gold">0.000</span> <span class="text-xs font-bold text-brand-400">cts</span></div></div></div><div class="space-y-5"><div class="bg-white p-5 rounded-2xl border border-brand-200 shadow-sm relative overflow-hidden"><div class="absolute left-0 top-0 w-1.5 h-full bg-brand-600"></div><div class="flex justify-between border-b border-brand-100 pb-3 mb-4"><h3 class="font-serif text-xl italic font-bold text-brand-800">Structural Metal</h3><div id="quote-ring-total-${r.id}" class="text-lg font-black text-brand-900">$0.00</div></div><div class="grid grid-cols-2 md:grid-cols-3 gap-4"><div><label class="text-[10px] font-bold text-brand-500 uppercase block mb-1">Elemental Base</label><select class="border p-3 rounded-xl w-full text-sm font-bold bg-brand-50 shadow-sm text-brand-800" onchange="state.quoteSession.rings[${rIdx}].material=this.value; window.updateQuoteTotals(); window.render()"><option value="gold" ${r.material==='gold'?'selected':''}>Gold</option><option value="platinum" ${r.material==='platinum'?'selected':''}>Platinum</option><option value="silver" ${r.material==='silver'?'selected':''}>Silver</option></select></div>${r.material==='gold'?`<div><label class="text-[10px] font-bold text-brand-500 uppercase block mb-1">Purity Tier</label><select class="border p-3 rounded-xl w-full text-sm font-bold bg-brand-50 shadow-sm text-brand-800" onchange="state.quoteSession.rings[${rIdx}].goldKarat=Number(this.value); window.updateQuoteTotals()">${PURITY_OPTIONS.gold.map(k=>`<option value="${k}" ${r.goldKarat===k?'selected':''}>${k}k Premium</option>`).join('')}</select></div><div><label class="text-[10px] font-bold text-brand-500 uppercase block mb-1">Color</label><select class="border p-3 rounded-xl w-full text-sm font-bold bg-brand-50 shadow-sm text-brand-800" onchange="state.quoteSession.rings[${rIdx}].metalColor=this.value; window.render()"><option ${r.metalColor==='Yellow'?'selected':''}>Yellow</option><option ${r.metalColor==='White'?'selected':''}>White</option><option ${r.metalColor==='Rose'?'selected':''}>Rose</option></select></div>` : ''}</div><div class="mt-4 pt-4 border-t border-brand-100">${r.category==='mensBand' ? `<div class="grid grid-cols-3 gap-3 mb-3"><div><label class="text-[10px] font-bold text-brand-500 uppercase block mb-1">US Size</label><input type="number" class="border p-2.5 rounded-xl w-full text-sm font-bold shadow-sm placeholder-brand-300" placeholder="e.g. 9" value="${r.mbSize}" oninput="state.quoteSession.rings[${rIdx}].mbSize=this.value; window.updateQuoteTotals()" /></div><div><label class="text-[10px] font-bold text-brand-500 uppercase block mb-1">Width(mm)</label><input type="number" class="border p-2.5 rounded-xl w-full text-sm font-bold shadow-sm placeholder-brand-300" placeholder="(mm)" value="${r.mbWidth}" oninput="state.quoteSession.rings[${rIdx}].mbWidth=this.value; window.updateQuoteTotals()" /></div><div><label class="text-[10px] font-bold text-brand-500 uppercase block mb-1">Thick(mm)</label><input type="number" class="border p-2.5 rounded-xl w-full text-sm font-bold shadow-sm placeholder-brand-300" placeholder="(mm)" value="${r.mbThickness}" oninput="state.quoteSession.rings[${rIdx}].mbThickness=this.value; window.updateQuoteTotals()" /></div></div><div class="bg-brand-50 p-2 rounded-xl text-center text-xs font-bold text-brand-700 border border-brand-100">Calc Raw Weight: <span id="mb-calc-weight-${r.id}" class="text-brand-900">0.00g</span></div>` : `<label class="text-[10px] font-bold text-brand-500 uppercase block mb-1">Finished Weight (Grams)</label><input type="number" class="border p-3 rounded-xl w-full text-sm font-bold shadow-sm placeholder-brand-300" placeholder="0.00g" value="${r.goldGrams}" oninput="state.quoteSession.rings[${rIdx}].goldGrams=this.value; window.updateQuoteTotals()" />${r.category === 'pendant' ? `<div class="grid grid-cols-2 gap-3 mt-3"><div><label class="text-[10px] font-bold text-brand-500 uppercase block mb-1">Dimensions (LxW)</label><input type="text" class="border p-2 rounded-lg w-full text-xs font-bold text-brand-600 shadow-sm placeholder-brand-200" placeholder="e.g. 25x15mm" value="${r.pDimensions}" oninput="state.quoteSession.rings[${rIdx}].pDimensions=this.value" /></div><div><label class="text-[10px] font-bold text-brand-500 uppercase block mb-1">Thickness (mm)</label><input type="number" class="border p-2 rounded-lg w-full text-xs font-bold text-brand-600 shadow-sm placeholder-brand-200" placeholder="(mm)" value="${r.cBandThickness}" oninput="state.quoteSession.rings[${rIdx}].cBandThickness=this.value" /></div></div>` : `<div class="grid grid-cols-3 gap-3 mt-3"><div><label class="text-[10px] font-bold text-brand-500 uppercase block mb-1">US Size</label><input type="number" class="border p-2 rounded-lg w-full text-xs font-bold text-brand-600 shadow-sm placeholder-brand-200" placeholder="e.g. 7.5" value="${r.cRingSize}" oninput="state.quoteSession.rings[${rIdx}].cRingSize=this.value" /></div><div><label class="text-[10px] font-bold text-brand-500 uppercase block mb-1">Width (mm)</label><input type="number" class="border p-2 rounded-lg w-full text-xs font-bold text-brand-600 shadow-sm placeholder-brand-200" placeholder="(mm)" value="${r.cBandWidth}" oninput="state.quoteSession.rings[${rIdx}].cBandWidth=this.value" /></div><div><label class="text-[10px] font-bold text-brand-500 uppercase block mb-1">Thick (mm)</label><input type="number" class="border p-2 rounded-lg w-full text-xs font-bold text-brand-600 shadow-sm placeholder-brand-200" placeholder="(mm)" value="${r.cBandThickness}" oninput="state.quoteSession.rings[${rIdx}].cBandThickness=this.value" /></div></div>`}`}</div><div id="quote-raw-cost-${r.id}" class="admin-only mt-3 text-right text-[10px] font-mono text-green-600 bg-green-50 p-2 rounded-lg border border-green-200">Raw Cost: $0.00</div></div>${r.category === 'customRing' || r.category === 'pendant' ? `<div class="bg-white p-5 rounded-2xl border border-brand-200 shadow-sm relative overflow-hidden"><div class="absolute left-0 top-0 w-1.5 h-full bg-brand-gold"></div><h3 class="text-xs font-bold text-brand-700 uppercase tracking-widest border-b border-brand-100 pb-2 mb-4">Centerstone</h3><div class="grid grid-cols-3 gap-4"><div><label class="text-[10px] font-bold text-brand-500 uppercase block mb-1">Shape</label><select class="border p-3 rounded-xl w-full text-sm font-bold bg-brand-50 shadow-sm text-brand-800" onchange="state.quoteSession.rings[${rIdx}].centerStone.shape=this.value; window.updateQuoteTotals()">${CENTER_SHAPES.map(s=>`<option ${r.centerStone.shape===s?'selected':''}>${s}</option>`).join('')}</select></div><div><label class="text-[10px] font-bold text-brand-500 uppercase block mb-1">Carats</label><input type="number" class="border p-3 rounded-xl w-full text-sm font-bold bg-brand-50 placeholder-brand-300 shadow-sm" placeholder="0.00 ct" value="${r.centerStone.carats}" oninput="state.quoteSession.rings[${rIdx}].centerStone.carats=this.value; window.updateQuoteTotals()" /></div><div><label class="text-[10px] font-bold text-brand-500 uppercase block mb-1">Setting Type</label><select class="border p-3 rounded-xl w-full text-[11px] font-bold bg-brand-50 shadow-sm text-brand-800" onchange="state.quoteSession.rings[${rIdx}].centerStone.setting=this.value; window.updateQuoteTotals()">${SETTING_STYLES.map(s=>`<option ${r.centerStone.setting===s?'selected':''}>${s}</option>`).join('')}</select></div></div></div>` : ''}<div class="bg-white p-5 rounded-2xl border border-brand-200 shadow-sm relative overflow-hidden"><div class="absolute left-0 top-0 w-1.5 h-full bg-brand-400"></div><label class="text-xs font-bold text-brand-700 uppercase tracking-widest block mb-2">Manual Addon / Fee</label><div class="flex gap-3 mb-4"><input type="number" class="border p-3 rounded-xl w-1/3 font-bold text-sm bg-brand-50 placeholder-brand-300 shadow-sm animate-none" placeholder="$0.00" value="${r.customAddon}" oninput="state.quoteSession.rings[${rIdx}].customAddon=this.value; window.updateQuoteTotals()" /><input type="text" class="border p-3 rounded-xl w-2/3 font-medium text-sm bg-brand-50 placeholder-brand-300 shadow-sm" placeholder="e.g. Premium Safety Clasp" value="${r.customAddonDesc || ''}" oninput="state.quoteSession.rings[${rIdx}].customAddonDesc=this.value" /></div><label class="text-xs font-bold text-brand-700 uppercase tracking-widest block mb-2">Design Notes (Finish, Details)</label><input type="text" class="border p-3 rounded-xl w-full font-medium text-sm bg-brand-50 placeholder-brand-300 shadow-sm" placeholder="e.g., Satin finish, custom inside engraving..." value="${r.ringNotes}" oninput="state.quoteSession.rings[${rIdx}].ringNotes=this.value" /></div></div></div>`;
+        }
+
+        window.buildQuoteSummary = function() {
+            return `
+                ${window.generateInvoiceTemplate(state.quoteSession, false)}
+                <div id="pdf-action-buttons" class="flex flex-col sm:flex-row justify-center gap-4 mt-8 print-hide max-w-2xl mx-auto">
+                    <button onclick="window.openScrapLinkModal()" class="bg-green-600 text-white px-6 py-3 rounded-xl font-bold shadow-md hover:bg-green-700 flex-1 whitespace-nowrap transition-colors">Link Scrap Credit</button>
+                    <button onclick="window.saveRingQuote()" class="bg-brand-900 text-white px-6 py-3 rounded-xl font-black shadow-md border border-brand-800 hover:bg-black flex-1 whitespace-nowrap transition-all text-xs uppercase tracking-widest">Save Quote to Ledger</button>
+                    <button onclick="window.generatePDF('pdf-content', '')" class="bg-brand-gold text-brand-900 px-6 py-3 rounded-xl font-black shadow-md border border-brand-goldHover hover:brightness-105 flex-1 whitespace-nowrap transition-all">Save & Print PDF</button>
+                </div>
+            `;
+        }
+
+        window.generateInvoiceTemplate = function(sq, isHistory) {
             const validRings = sq.rings.filter(r => window.hasRingData(r));
             let grandTotal = 0; let rawTotal = 0; let discountTotal = 0;
             
             validRings.forEach(r => { 
-                const cost = window.calculateRingCost(r);
-                grandTotal += cost; 
-                rawTotal += window.calculateRawCost(r); 
-                const dVal = Number(r.discount) || 0;
-                discountTotal += r.discountType === '%' ? cost * (dVal / 100) : dVal;
+                const cost = window.calculateRingCost(r); grandTotal += cost; rawTotal += window.calculateRawCost(r); 
+                const dVal = Number(r.discount) || 0; discountTotal += r.discountType === '%' ? cost * (dVal / 100) : dVal;
             });
             
             const subtotal = Math.max(0, grandTotal - discountTotal - (Number(sq.scrapCredit)||0));
@@ -656,7 +432,7 @@
             const finalAmount = subtotal + taxAmount;
 
             return `
-                <div id="${targetId}" class="space-y-4 ${isHistory ? 'mt-0' : 'mt-6'} max-w-2xl mx-auto bg-white p-6 md:p-8 rounded-2xl border border-brand-200 shadow-xl">
+                <div id="${isHistory ? 'pdf-modal-content' : 'pdf-content'}" class="space-y-4 ${isHistory ? 'mt-0' : 'mt-6'} max-w-2xl mx-auto bg-white p-6 md:p-8 rounded-2xl border border-brand-200 shadow-xl print-section relative">
                     <div class="text-center mb-6 border-b border-brand-100 pb-4">
                         <h2 class="font-serif text-3xl italic font-bold text-brand-900">Gold & Rose</h2>
                         <p class="text-[10px] text-brand-500 mt-1 uppercase tracking-widest font-bold">Consultation Invoice</p>
@@ -665,70 +441,28 @@
                             <span><strong>Date:</strong> ${isHistory ? (sq.date || new Date().toLocaleDateString()) : new Date().toLocaleDateString()}</span>
                         </div>
                     </div>
-                    
                     ${validRings.map((r, i) => {
                         const title = r.category==='customRing'?'Engagement Ring':(r.category==='weddingBand'?'Wedding Band':(r.category==='tennisBracelet'?'Tennis Bracelet':(r.category==='pendant'?'Pendant':"Men's Band")));
                         const globalIdx = state.quoteSession.rings.findIndex(x => x.id === r.id);
-                        
                         let specs = '';
-                        if(r.category === 'mensBand') specs = `Size ${r.mbSize} | Width: ${r.mbWidth}mm | Thickness: ${r.mbThickness}mm`;
-                        else if(r.category === 'tennisBracelet') specs = `Length: ${r.tbLength} inches`;
-                        else if(r.category === 'pendant') specs = `Dimensions: ${r.pDimensions} | Thickness: ${r.cBandThickness}mm`;
-                        else specs = `Size ${r.cRingSize} | Width: ${r.cBandWidth}mm | Thickness: ${r.cBandThickness}mm`;
-                        
-                        const fancyValid = (r.fancy||[]).filter(f=>Number(f.qty)>0);
-                        const fancyText = fancyValid.length > 0 ? `<p class="col-span-2"><strong class="text-brand-900">Fancy Accents:</strong> ${fancyValid.map(f=>{ const fd=(FANCY_SHAPES[f.shape]||[])[f.sizeIdx]; return `${f.qty}x ${f.shape} (${fd?.label||''})`; }).join(', ')}</p>` : '';
-                        
-                        const meleeValid = (r.melee||[]).filter(m=>Number(m.qty)>0);
-                        let meleeText = meleeValid.length > 0 ? `<p class="col-span-2"><strong class="text-brand-900">Melee Layout:</strong> ${meleeValid.map(m=>`${m.qty}x (${m.size}mm)`).join(', ')}</p>` : '';
-                        
-                        if(r.category === 'tennisBracelet') {
-                            const est = window.getTennisEstimates(r);
-                            const finalStones = Number(r.tbManualStones) || est.estStones;
-                            const finalCarats = Number(r.tbManualCarats) || (finalStones * est.caratPerStone);
-                            const tShape = r.tbShape==='Round' ? `${r.tbSizeRound}mm Round` : `${r.tbShape} (${(FANCY_SHAPES[r.tbShape]||[])[r.tbSizeIdx || 0]?.label || ''})`;
-                            meleeText = `<p class="col-span-2"><strong class="text-brand-900">Bracelet Layout:</strong> ${finalStones}x ${tShape} (${finalCarats.toFixed(2)}ctw)</p>`;
-                        }
-                        
+                        if(r.category === 'mensBand') specs = `Size ${r.mbSize} | Width: ${r.mbWidth}mm | Thickness: ${r.mbThickness}mm`; else if(r.category === 'tennisBracelet') specs = `Length: ${r.tbLength} inches`; else if(r.category === 'pendant') specs = `Dimensions: ${r.pDimensions} | Thickness: ${r.cBandThickness}mm`; else specs = `Size ${r.cRingSize} | Width: ${r.cBandWidth}mm | Thickness: ${r.cBandThickness}mm`;
+                        const fancyValid = (r.fancy||[]).filter(f=>Number(f.qty)>0); const fancyText = fancyValid.length > 0 ? `<p class="col-span-2"><strong class="text-brand-900">Fancy Accents:</strong> ${fancyValid.map(f=>{ const fd=(FANCY_SHAPES[f.shape]||[])[f.sizeIdx]; return `${f.qty}x ${f.shape} (${fd?.label||''})`; }).join(', ')}</p>` : '';
+                        const meleeValid = (r.melee||[]).filter(m=>Number(m.qty)>0); let meleeText = meleeValid.length > 0 ? `<p class="col-span-2"><strong class="text-brand-900">Melee Layout:</strong> ${meleeValid.map(m=>`${m.qty}x (${m.size}mm)`).join(', ')}</p>` : '';
+                        if(r.category === 'tennisBracelet') { const est = window.getTennisEstimates(r); const finalStones = Number(r.tbManualStones) || est.estStones; const finalCarats = Number(r.tbManualCarats) || (finalStones * est.caratPerStone); const tShape = r.tbShape==='Round' ? `${r.tbSizeRound}mm Round` : `${r.tbShape} (${(FANCY_SHAPES[r.tbShape]||[])[r.tbSizeIdx || 0]?.label || ''})`; meleeText = `<p class="col-span-2"><strong class="text-brand-900">Bracelet Layout:</strong> ${finalStones}x ${tShape} (${finalCarats.toFixed(2)}ctw)</p>`; }
                         const centerText = ((r.category === 'customRing' || r.category === 'pendant') && Number(r.centerStone?.carats)>0) ? `<p class="col-span-2"><strong class="text-brand-900">Centerstone:</strong> ${r.centerStone.carats}ct ${r.centerStone.shape} (${r.centerStone.setting})</p>` : '';
                         const notesText = r.ringNotes ? `<p class="col-span-2"><strong class="text-brand-900">Design Notes:</strong> ${r.ringNotes}</p>` : '';
                         const addonText = r.customAddon ? `<p class="col-span-2"><strong class="text-brand-900">Addon Fee:</strong> $${r.customAddon} ${r.customAddonDesc ? `(${r.customAddonDesc})`:''}</p>` : '';
                         const metalLabel = r.material === 'gold' ? `${r.goldKarat}k ${r.metalColor} Gold` : (r.material==='silver'?'Silver':'Platinum');
-                        
-                        const rCost = window.calculateRingCost(r);
-                        const dVal = Number(r.discount) || 0;
-                        const rDiscountAmt = r.discountType === '%' ? rCost * (dVal / 100) : dVal;
-
+                        const rCost = window.calculateRingCost(r); const dVal = Number(r.discount) || 0; const rDiscountAmt = r.discountType === '%' ? rCost * (dVal / 100) : dVal;
                         return `
                         <div class="bg-brand-50 p-5 rounded-2xl border border-brand-200 relative mb-4 break-inside-avoid shadow-sm">
-                            <div class="absolute top-4 right-5 text-right">
-                                <span class="block font-black text-brand-900 text-lg">$${rCost.toFixed(2)}</span>
-                                ${rDiscountAmt > 0 ? `<span class="block text-red-500 font-bold text-xs">-$${rDiscountAmt.toFixed(2)}</span>` : ''}
-                            </div>
+                            <div class="absolute top-4 right-5 text-right"><span class="block font-black text-brand-900 text-lg">$${rCost.toFixed(2)}</span>${rDiscountAmt > 0 ? `<span class="block text-red-500 font-bold text-xs">-$${rDiscountAmt.toFixed(2)}</span>` : ''}</div>
                             <h3 class="text-xs font-black uppercase tracking-wider text-brand-800 border-b border-brand-200 pb-2 mb-3 pr-28">${title} ${validRings.length>1?`(${i+1})`:''}</h3>
-                            <div class="grid grid-cols-2 text-xs gap-y-2 text-brand-700">
-                                <p><strong class="text-brand-900">Metal:</strong> ${r.goldGrams}g ${metalLabel}</p>
-                                <p><strong class="text-brand-900">Specs:</strong> ${specs}</p>
-                                ${centerText}
-                                ${r.category!=='tennisBracelet'?fancyText:''}
-                                ${meleeText}
-                                ${notesText}
-                                ${addonText}
-                            </div>
-                            ${isHistory ? '' : `
-                            <div class="print-hide mt-4 flex items-center justify-end gap-2 border-t border-brand-200 pt-3">
-                                <label class="text-[10px] font-bold text-brand-500 uppercase tracking-widest">Apply Discount:</label>
-                                <div class="flex items-center bg-white border border-brand-200 rounded-lg overflow-hidden shadow-sm">
-                                    <button onclick="state.quoteSession.rings['${globalIdx}'].discountType='$'; window.updateQuoteTotals(); window.render();" class="px-2 py-1.5 text-xs font-bold ${r.discountType==='$'?'bg-brand-100 text-brand-900':'text-brand-400'} transition-colors">$</button>
-                                    <button onclick="state.quoteSession.rings['${globalIdx}'].discountType='%'; window.updateQuoteTotals(); window.render();" class="px-2 py-1.5 text-xs font-bold ${r.discountType==='%'?'bg-brand-100 text-brand-900':'text-brand-400'} transition-colors">%</button>
-                                    <input type="number" class="w-16 p-1.5 text-xs font-bold text-red-600 text-right outline-none no-spinner" placeholder="0" value="${r.discount || ''}" oninput="state.quoteSession.rings['${globalIdx}'].discount=this.value; window.updateQuoteTotals();" />
-                                </div>
-                            </div>
-                            `}
+                            <div class="grid grid-cols-2 text-xs gap-y-2 text-brand-700"><p><strong class="text-brand-900">Metal:</strong> ${r.goldGrams}g ${metalLabel}</p><p><strong class="text-brand-900">Specs:</strong> ${specs}</p>${centerText}${r.category!=='tennisBracelet'?fancyText:''}${meleeText}${notesText}${addonText}</div>
+                            ${isHistory ? '' : `<div class="print-hide mt-4 flex items-center justify-end gap-2 border-t border-brand-200 pt-3"><label class="text-[10px] font-bold text-brand-500 uppercase tracking-widest">Apply Discount:</label><div class="flex items-center bg-white border border-brand-200 rounded-lg overflow-hidden shadow-sm"><button onclick="state.quoteSession.rings['${globalIdx}'].discountType='$'; window.updateQuoteTotals(); window.render();" class="px-2 py-1.5 text-xs font-bold ${r.discountType==='$'?'bg-brand-100 text-brand-900':'text-brand-400'} transition-colors">$</button><button onclick="state.quoteSession.rings['${globalIdx}'].discountType='%'; window.updateQuoteTotals(); window.render();" class="px-2 py-1.5 text-xs font-bold ${r.discountType==='%'?'bg-brand-100 text-brand-900':'text-brand-400'} transition-colors">%</button><input type="number" class="w-16 p-1.5 text-xs font-bold text-red-600 text-right outline-none no-spinner" placeholder="0" value="${r.discount || ''}" oninput="state.quoteSession.rings['${globalIdx}'].discount=this.value; window.updateQuoteTotals();" /></div></div>`}
                         </div>`
                     }).join('')}
-
-                    <div class="border-t-2 border-brand-800 pt-4 mt-6 text-sm text-brand-800 flex justify-end">
+                    <div class="border-t-2 border-brand-800 pt-4 mt-6 text-sm text-brand-800 flex justify-end break-inside-avoid">
                         <div class="w-full md:w-1/2 space-y-2">
                             <div class="flex justify-between font-bold text-brand-600"><span>Gross Total:</span> <span>$${grandTotal.toFixed(2)}</span></div>
                             ${discountTotal > 0 ? `<div class="flex justify-between font-bold text-red-500"><span>Total Discounts:</span> <span>-$${discountTotal.toFixed(2)}</span></div>` : ''}
@@ -738,180 +472,271 @@
                             <div class="flex justify-between font-black text-2xl text-brand-900 border-t-2 border-brand-800 pt-2 mt-2"><span>Grand Total:</span> <span>$${finalAmount.toFixed(2)}</span></div>
                         </div>
                     </div>
-                    
-                    <div class="admin-only bg-green-50 text-green-700 border border-green-200 p-4 rounded-xl mt-6 text-xs font-mono shadow-inner">
+                    <div class="admin-only bg-green-50 text-green-700 border border-green-200 p-4 rounded-xl mt-6 text-xs font-mono shadow-inner break-inside-avoid">
                         <strong class="uppercase tracking-widest block border-b border-green-200 pb-2 mb-2 text-[10px]">Internal Admin Cost Breakdown</strong>
-                        Total Raw Material Cost: $${rawTotal.toFixed(2)}<br>
-                        Implied Gross Profit: $${(finalAmount - rawTotal).toFixed(2)}
+                        Total Raw Material Cost: $${rawTotal.toFixed(2)}<br>Implied Gross Profit: $${(finalAmount - rawTotal).toFixed(2)}
                     </div>
-
                     <div class="mt-8 break-inside-avoid">
-                        <h4 class="text-[10px] font-bold uppercase text-brand-700 mb-3 tracking-widest">Additional Notes</h4>
-                        <textarea class="w-full h-32 p-4 bg-brand-50 border border-brand-200 rounded-xl text-sm text-brand-800 focus:bg-white transition-colors outline-none resize-none shadow-sm overflow-hidden print-hide" placeholder="Enter manual notes, special instructions, or terms here..." ${isHistory ? 'readonly' : `oninput="if('${targetId}'==='pdf-content'){ state.quoteSession.notes=this.value; }"`}>${sq.notes || ''}</textarea>
-                        <div class="hidden print:block text-sm text-brand-800 whitespace-pre-wrap leading-relaxed">${sq.notes || ''}</div>
+                        <h4 class="text-[10px] font-bold uppercase text-brand-700 mb-3 tracking-widest">Additional Notes & Terms</h4>
+                        ${isHistory ? `<div class="text-sm text-brand-800 whitespace-pre-wrap leading-relaxed border border-brand-200 p-4 rounded-xl min-h-[6rem] bg-brand-50">${sq.notes || ''}</div>` : `<textarea class="w-full h-24 p-4 bg-brand-50 border border-brand-200 rounded-xl text-sm text-brand-800 focus:bg-white transition-colors outline-none resize-none shadow-sm print-hide" placeholder="Type custom notes, timeline, or special instructions here..." oninput="state.quoteSession.notes=this.value;">${sq.notes || ''}</textarea><div class="hidden print:block text-sm text-brand-800 whitespace-pre-wrap leading-relaxed border border-brand-200 p-4 rounded-xl min-h-[6rem]">${sq.notes || ''}</div>`}
                     </div>
-
                     <div class="mt-8 pt-6 border-t border-brand-200 break-inside-avoid">
                         <h4 class="text-[10px] font-bold uppercase tracking-widest text-brand-700 mb-3">Client Authorization</h4>
-                        ${sq.signatureImg ? `
-                            <img src="${sq.signatureImg}" class="h-20 w-auto mb-1 border-b border-brand-300" />
-                            <p class="text-[9px] uppercase text-brand-500 tracking-widest">Signed digitally</p>
-                            ${isHistory ? '' : `<button onclick="window.clearSignature()" class="text-[9px] text-red-500 mt-2 hover:underline print-hide">Clear Signature</button>`}
-                        ` : (isHistory ? `
-                            <p class="text-[9px] text-brand-400 mt-2 uppercase tracking-widest">No Signature Captured</p>
-                        ` : `
-                            <canvas id="signature-pad" class="w-full h-24 border-2 border-dashed border-brand-300 rounded-xl bg-brand-50 cursor-crosshair print-hide"></canvas>
-                            <p class="text-[9px] text-brand-400 mt-2 text-center print-hide uppercase tracking-widest">Draw signature above</p>
-                            <button onclick="window.saveSignature()" class="mt-2 bg-brand-800 text-brand-gold px-4 py-2 rounded-lg text-xs font-bold print-hide shadow-sm hover:bg-brand-900 transition-colors w-full md:w-auto">Lock Signature</button>
-                        `)}
+                        ${sq.signatureImg ? `<img src="${sq.signatureImg}" class="h-20 w-auto mb-1 border-b border-brand-300" /><p class="text-[9px] uppercase text-brand-500 tracking-widest">Signed digitally</p>${isHistory ? '' : `<button onclick="window.clearSignature()" class="text-[9px] text-red-500 mt-2 hover:underline print-hide">Clear Signature</button>`}` : (isHistory ? `<p class="text-[9px] text-brand-400 mt-2 uppercase tracking-widest">No Signature Captured</p>` : `<canvas id="signature-pad" class="w-full h-24 border-2 border-dashed border-brand-300 rounded-xl bg-brand-50 cursor-crosshair print-hide"></canvas><p class="text-[9px] text-brand-400 mt-2 text-center print-hide uppercase tracking-widest">Draw signature above</p><button onclick="window.saveSignature()" class="mt-2 bg-brand-800 text-brand-gold px-4 py-2 rounded-lg text-xs font-bold print-hide shadow-sm hover:bg-brand-900 transition-colors w-full md:w-auto">Lock Signature</button>`)}
+                    </div>
+                    <div class="mt-8 text-[8px] text-brand-500 italic text-justify leading-relaxed space-y-1 bg-brand-50 p-4 rounded-xl border border-brand-100 break-inside-avoid">
+                        <p>* This quotation is valid for 7 days from the date of issue. Fluctuations in global precious metal markets may result in minor pricing adjustments prior to casting.</p><p>* All custom orders require a 50% non-refundable deposit before CAD rendering or manufacturing begins.</p><p>* Minor design adjustments during the rendering phase are accommodated free of charge for clients producing a piece with us. However, complete redesigns will incur a design fee.</p><p>* <strong>Please note:</strong> Once a design has been approved and cast into metal, any subsequent alterations will incur additional charges to cover refining fees, labor, and new alloy costs.</p>
+                    </div>
+                </div>
+            `;
+        }
+
+        function buildLedgerHTML() {
+            const filterS = state.scrapTransactions.filter(t => t.name.toLowerCase().includes(state.searchScrap.toLowerCase()) || (t.phone||'').includes(state.searchScrap));
+            const filterQ = state.ringQuoteTransactions.filter(q => q.name.toLowerCase().includes(state.searchQuote.toLowerCase()) || (q.phone||'').includes(state.searchQuote));
+
+            return `
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 animate-fadeIn">
+                    <div class="p-6 bg-white rounded-2xl shadow-lg border border-brand-100 flex flex-col h-[600px]">
+                        <h2 class="text-sm font-black mb-4 text-brand-800 uppercase tracking-wider border-b border-brand-100 pb-3">Scrap Payouts</h2>
+                        <input type="text" placeholder="Search by name or phone..." class="border border-brand-200 p-2.5 rounded-xl text-sm mb-4 bg-brand-50 focus:bg-white transition-colors" value="${state.searchScrap}" oninput="state.searchScrap=this.value; window.render()" />
+                        <div class="space-y-3 overflow-y-auto flex-1 pr-2 hide-scrollbar">
+                            ${filterS.length===0 ? '<p class="text-center text-brand-400 mt-10">No records found.</p>' : filterS.map(t => `<div class="p-4 bg-brand-50 rounded-xl border border-brand-200 flex justify-between items-center hover:border-green-300 transition-colors shadow-sm cursor-pointer" onclick="window.showScrapDetails('${t.id}')"><div class="flex-1"><p class="font-bold text-brand-900">${t.name}</p><p class="text-[10px] text-brand-500 mt-1">${t.date}</p></div><div class="flex items-center gap-4"><span class="font-black text-green-600">$${t.total}</span><button onclick="event.stopPropagation(); window.deleteLedgerItem('scrap', '${t.id}')" class="text-red-400 hover:text-red-600 bg-white p-2 rounded-lg shadow-sm border border-brand-100 transition-colors">${ICONS.trash}</button></div></div>`).join('')}
+                        </div>
+                    </div>
+                    <div class="p-6 bg-white rounded-2xl shadow-lg border border-brand-100 flex flex-col h-[600px]">
+                        <h2 class="text-sm font-black mb-4 text-brand-800 uppercase tracking-wider border-b border-brand-100 pb-3">Consultation Quotes</h2>
+                        <input type="text" placeholder="Search by name or phone..." class="border border-brand-200 p-2.5 rounded-xl text-sm mb-4 bg-brand-50 focus:bg-white transition-colors" value="${state.searchQuote}" oninput="state.searchQuote=this.value; window.render()" />
+                        <div class="space-y-3 overflow-y-auto flex-1 pr-2 hide-scrollbar">
+                            ${filterQ.length===0 ? '<p class="text-center text-brand-400 mt-10">No records found.</p>' : filterQ.map(q => `<div class="p-4 bg-brand-50 rounded-xl border border-brand-200 flex justify-between items-center hover:border-brand-400 transition-colors shadow-sm cursor-pointer" onclick="window.showQuoteDetails('${q.id}')"><div class="flex-1"><p class="font-bold text-brand-900">${q.name}</p><p class="text-[10px] text-brand-500 mt-1">${q.date}</p></div><div class="flex items-center gap-4"><span class="font-black text-brand-800">${q.total}</span><button onclick="event.stopPropagation(); window.deleteLedgerItem('quote', '${q.id}')" class="text-red-400 hover:text-red-600 bg-white p-2 rounded-lg shadow-sm border border-brand-100 transition-colors">${ICONS.trash}</button></div></div>`).join('')}
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function buildSpotHTML() {
+            const bg = state.spotPrices.gold / TROY_ONCE_GRAMS; const bs = state.spotPrices.silver / TROY_ONCE_GRAMS; const bp = state.spotPrices.platinum / TROY_ONCE_GRAMS;
+            return `
+                <div class="p-4 md:p-8 bg-white rounded-b-2xl rounded-tr-2xl shadow-lg border border-brand-100 space-y-6 animate-fadeIn">
+                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-brand-50 p-4 rounded-xl border border-brand-200 gap-3 shadow-sm">
+                        <div><h3 class="text-xs font-bold text-brand-700 uppercase tracking-wider">Live System Metrics</h3><p class="text-[11px] text-brand-500 font-medium">Last Feed Sync: <span class="font-bold text-brand-800">${state.lastUpdated}</span></p></div>
+                        <div class="flex items-center gap-2">${state.syncStatus ? `<span class="text-[10px] font-bold text-green-600 uppercase tracking-widest bg-green-50 border border-green-200 px-2 py-1.5 rounded-md">${state.syncStatus}</span>` : ''}<button onclick="window.fetchLivePrices()" class="text-xs bg-brand-800 text-brand-gold px-4 py-2 rounded-xl font-bold hover:bg-brand-900 transition-all shadow-sm">Sync Market Rate</button></div>
+                    </div>
+                    <div><h3 class="text-[10px] font-bold text-brand-500 uppercase tracking-widest pl-1 mb-2">Modify Raw Feed Anchors (per Oz)</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            ${['gold', 'silver', 'platinum'].map(m => `<div class="bg-white p-3 rounded-xl border border-brand-200 shadow-sm"><label class="text-[10px] font-bold text-brand-500 uppercase block mb-1">${m}</label><input type="number" class="w-full p-2 border rounded-lg font-bold bg-brand-50 text-brand-900 text-sm no-spinner shadow-sm" value="${state.spotPrices[m]}" oninput="state.spotPrices.${m}=Number(this.value); window.updateScrapUI(); window.updateSpotUI();" /></div>`).join('')}
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-5 pt-4">
+                        <div class="border border-brand-200 bg-white rounded-2xl p-4 shadow-sm flex flex-col h-72"><h4 class="font-black text-amber-600 border-b border-brand-100 pb-1.5 mb-2 uppercase text-[11px]">Gold Matrix</h4><div class="overflow-y-auto pr-2 text-xs space-y-1.5 hide-scrollbar">${Array.from({length:15},(_,i)=>i+10).map(k=>`<div class="flex justify-between border-b border-brand-50 pb-1"><span class="font-semibold">${k}k Solid</span><span class="font-mono font-bold">$${(bg*(k/24)).toFixed(2)}/g</span></div>`).join('')}</div></div>
+                        <div class="border border-brand-200 bg-white rounded-2xl p-4 shadow-sm flex flex-col h-72"><h4 class="font-black text-brand-500 border-b border-brand-100 pb-1.5 mb-2 uppercase text-[11px]">Silver Matrix</h4><div class="text-xs space-y-2">${PURITY_OPTIONS.silver.map(p=>`<div class="flex justify-between border-b border-brand-50 pb-1"><span class="font-semibold">${p===0.999?'Fine (.999)':'Spec '+p}</span><span class="font-mono font-bold">$${(bs*p).toFixed(2)}/g</span></div>`).join('')}</div></div>
+                        <div class="border border-brand-200 bg-white rounded-2xl p-4 shadow-sm flex flex-col h-72"><h4 class="font-black text-blue-500 border-b border-brand-100 pb-1.5 mb-2 uppercase text-[11px]">Platinum Matrix</h4><div class="text-xs space-y-2">${PURITY_OPTIONS.platinum.map(p=>`<div class="flex justify-between border-b border-brand-50 pb-1"><span class="font-semibold">${p===0.999?'Fine (.999)':'Alloy '+p}</span><span class="font-mono font-bold">$${(bp*p).toFixed(2)}/g</span></div>`).join('')}</div></div>
                     </div>
                     
-                    <div class="mt-8 text-[8px] text-brand-500 italic text-justify leading-relaxed space-y-1 bg-brand-50 p-4 rounded-xl border border-brand-100">
-                        <p>* This quotation is valid for 7 days from the date of issue. Fluctuations in global precious metal markets may result in minor pricing adjustments prior to casting.</p>
-                        <p>* All custom orders require a 50% non-refundable deposit before CAD rendering or manufacturing begins.</p>
-                        <p>* Minor design adjustments during the rendering phase are accommodated free of charge for clients producing a piece with us. However, complete redesigns will incur a design fee.</p>
-                        <p>* <strong>Please note:</strong> Once a design has been approved and cast into metal, any subsequent alterations will incur additional charges to cover refining fees, labor, and new alloy costs.</p>
+                    <div class="mt-4 bg-brand-900 text-white p-5 rounded-2xl shadow-xl border border-brand-800">
+                        <h3 class="text-xs font-bold text-brand-400 uppercase tracking-widest border-b border-brand-700 pb-2 mb-4">Quick Raw Metal Calculator</h3>
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 items-end text-xs">
+                            <div><label class="text-[10px] text-brand-300 font-bold block mb-1 uppercase tracking-wider">Select Metal Purity</label>
+                                <select class="w-full p-3 rounded-xl font-bold bg-brand-800 text-white border border-brand-700 shadow-sm" onchange="state.quickCalcPurity=this.value; window.updateSpotUI()">
+                                    <option value="gold_10" ${state.quickCalcPurity==='gold_10'?'selected':''}>10k Gold</option><option value="gold_14" ${state.quickCalcPurity==='gold_14'?'selected':''}>14k Gold</option><option value="gold_18" ${state.quickCalcPurity==='gold_18'?'selected':''}>18k Gold</option><option value="gold_19" ${state.quickCalcPurity==='gold_19'?'selected':''}>19k Gold</option><option value="gold_22" ${state.quickCalcPurity==='gold_22'?'selected':''}>22k Gold</option><option value="gold_24" ${state.quickCalcPurity==='gold_24'?'selected':''}>24k Gold</option><option value="silver_0.925" ${state.quickCalcPurity==='silver_0.925'?'selected':''}>.925 Silver</option><option value="silver_0.999" ${state.quickCalcPurity==='silver_0.999'?'selected':''}>.999 Silver</option><option value="platinum_0.950" ${state.quickCalcPurity==='platinum_0.950'?'selected':''}>.950 Platinum</option>
+                                </select>
+                            </div>
+                            <div><label class="text-[10px] text-brand-300 font-bold block mb-1 uppercase tracking-wider">Input Grams</label>
+                                <input type="number" class="w-full p-3 rounded-xl font-bold bg-brand-800 text-white border border-brand-700 shadow-sm" placeholder="0.00" value="${state.quickCalcGrams}" oninput="state.quickCalcGrams=this.value; window.updateSpotUI()" />
+                            </div>
+                            <div class="bg-green-900/30 p-2.5 rounded-xl border border-green-800 text-center">
+                                <span class="text-[10px] text-green-400 uppercase tracking-widest block mb-0.5">Total Raw Cost</span>
+                                <span id="spot-quick-total" class="text-xl font-black text-green-400">$${window.calculateQuickRawCost()}</span>
+                            </div>
+                        </div>
                     </div>
                 </div>
             `;
         }
 
-        // --- EXPORT & DATA OPS ---
-        function exportCSV(type) {
-            let csv = "";
-            if (type === 'scrap') {
-                csv = "Date,Client,Phone,Summary,Total\n";
-                (state.scrapTransactions || []).forEach(t => { if(t) csv += `"${t.date || ''}","${t.name || ''}","${t.phone || ''}","${(t.summary||'').replace(/"/g, '""')}","${t.total || 0}"\n`; });
-            } else {
-                csv = "Date,Client,Phone,Total Price\n"; 
-                (state.ringQuoteTransactions || []).forEach(q => { if(q) csv += `"${q.date || ''}","${q.name || ''}","${q.phone || ''}","${q.total || 0}"\n`; });
-            }
-            const blob = new Blob([csv], { type: 'text/csv' }); const url = URL.createObjectURL(blob);
-            const a = document.createElement('a'); a.href = url; a.download = `${type}_Ledger_Export_${new Date().toISOString().slice(0,10)}.csv`;
-            document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
-        }
-
-        function clearHistory() {
-            const range = document.getElementById('clear-history-range').value;
-            const startDateEl = document.getElementById('clear-start-date').value; const endDateEl = document.getElementById('clear-end-date').value;
-            if (!confirm("WARNING: Are you sure you want to delete ledger history? Ensure you have exported a backup first!")) return;
-
-            let fS = [], fQ = [];
-            const safeS = Array.isArray(state.scrapTransactions) ? state.scrapTransactions : [];
-            const safeQ = Array.isArray(state.ringQuoteTransactions) ? state.ringQuoteTransactions : [];
-
-            if (range === 'all') { fS = []; fQ = []; } 
-            else if (range === '365') {
-                const cutoff = new Date(); cutoff.setDate(cutoff.getDate() - 365);
-                fS = safeS.filter(t => t && new Date(t.date) > cutoff); fQ = safeQ.filter(t => t && new Date(t.date) > cutoff);
-            } else if (range === 'custom') {
-                if (!startDateEl || !endDateEl) return alert("Select start and end dates.");
-                const start = new Date(startDateEl); start.setHours(0,0,0,0); const end = new Date(endDateEl); end.setHours(23,59,59,999);
-                fS = safeS.filter(t => { if(!t) return false; const d = new Date(t.date); return d < start || d > end; });
-                fQ = safeQ.filter(t => { if(!t) return false; const d = new Date(t.date); return d < start || d > end; });
-            }
-            state.scrapTransactions = fS; state.ringQuoteTransactions = fQ;
-            localStorage.setItem('gr_scrap_ledger', JSON.stringify(fS)); localStorage.setItem('gr_quote_ledger', JSON.stringify(fQ));
-            render(); alert("Ledger records purged.");
-        }
-
-        function handleImageUpload(e, key) {
-            const file = e.target.files[0]; if(!file) return;
-            const r = new FileReader(); r.onload = ev => {
-                const img = new Image(); img.onload = () => {
-                    const canvas = document.createElement('canvas'); const max = 800; let w=img.width, h=img.height;
-                    if(w>max){h*=(max/w); w=max;} canvas.width=w; canvas.height=h;
-                    canvas.getContext('2d').drawImage(img, 0, 0, w, h);
-                    if(key==='scrap') state.scrapImage = canvas.toDataURL('image/jpeg', 0.6);
-                    else state.quoteSession.referencePhoto = canvas.toDataURL('image/jpeg', 0.6);
-                    render();
-                }; img.src = ev.target.result;
-            }; r.readAsDataURL(file);
-        }
-
-        function showScrapDetails(id) { state.modal = { type: 'scrapReceipt', id: id }; render(); }
-        function showQuoteDetails(id) { state.modal = { type: 'quoteReceipt', id: id }; render(); }
-        function openScrapLinkModal() { state.modal = { type: 'scrapLink', title: 'Apply Scrap Credit' }; render(); }
-        function deleteLedgerItem(type, id) {
-            state.modal = {
-                title: 'Confirm Deletion', message: 'Permanently delete this record from the history ledger database?',
-                onConfirm: () => {
-                    if(type === 'scrap') { state.scrapTransactions = state.scrapTransactions.filter(t => t.id !== id); localStorage.setItem('gr_scrap_ledger', JSON.stringify(state.scrapTransactions)); }
-                    else { state.ringQuoteTransactions = state.ringQuoteTransactions.filter(q => q.id !== id); localStorage.setItem('gr_quote_ledger', JSON.stringify(state.ringQuoteTransactions)); }
-                    state.modal = null; render();
-                }
-            }; render();
-        }
-
-        // --- RENDER ROUTER ---
-        function render() {
-            const app = document.getElementById('app');
-            app.innerHTML = `
-                <div class="flex flex-col items-center mb-6 pt-4 relative">
-                    ${(state.activeTab === 'quote' || state.activeTab === 'settings') ? 
-                        `<div class="absolute right-0 top-0"><button onclick="window.toggleAdminMode()" class="px-4 py-1.5 rounded-xl text-[10px] font-bold uppercase tracking-widest border transition-colors ${state.isAdminMode ? 'bg-yellow-600 text-white border-yellow-700 shadow-md' : 'bg-white text-brand-400 border-brand-200'}">Admin Mode: ${state.isAdminMode?'ON':'OFF'}</button></div>` : ''
-                    }
-                    <h1 class="font-serif text-5xl italic text-brand-900 tracking-wide drop-shadow-sm">Gold and Rose</h1>
-                    <p class="text-[10px] text-brand-400 uppercase tracking-[0.3em] font-bold mt-3">Executive Operations Dashboard</p>
-                </div>
-                
-                <div class="flex border-b border-brand-200 mb-6 bg-white rounded-t-2xl px-4 pt-4 shadow-sm overflow-x-auto hide-scrollbar">
-                    ${[{id:'scrap_calculator', label:'Scrap Calculator'}, {id:'quote', label:'Custom Quote'}, {id:'spot_price', label:'Spot Price'}, {id:'settings', label:'Settings'}, {id:'ledger', label:'Ledger History'}].map(t => 
-                        `<button onclick="state.activeTab='${t.id}'; window.render()" class="py-3 px-5 font-bold text-sm md:text-base whitespace-nowrap border-b-4 transition-colors ${state.activeTab === t.id ? 'bg-brand-50 text-brand-900 border-brand-800' : 'border-transparent text-brand-500 hover:text-brand-700'}">${t.label}</button>`
-                    ).join('')}
-                </div>
-
-                <div class="animate-fadeIn">
-                    ${state.activeTab === 'scrap_calculator' ? buildScrapHTML() : ''}
-                    ${state.activeTab === 'quote' ? buildQuoteTab() : ''}
-                    ${state.activeTab === 'spot_price' ? buildSpotHTML() : ''}
-                    ${state.activeTab === 'settings' ? buildSettingsHTML() : ''}
-                    ${state.activeTab === 'ledger' ? buildLedgerHTML() : ''}
-                </div>
-                ${buildModals()}
-                
-                ${state.isSketching ? `
-                    <div class="fixed inset-0 bg-brand-100 z-[100] flex flex-col animate-fadeIn">
-                        <div class="flex justify-between items-center p-4 bg-brand-900 text-white shadow-md z-10 border-b border-brand-800">
-                            <h3 class="font-bold tracking-widest uppercase text-sm text-brand-gold">Design Sketchpad</h3>
-                            <div class="flex gap-3 items-center">
-                                <button onclick="window.clearSketch()" class="text-xs text-red-400 font-bold hover:text-red-300 px-3">Clear</button>
-                                <button onclick="state.isSketching=false; window.render()" class="text-xs text-brand-300 font-bold hover:text-white px-3 border-r border-brand-700 pr-5">Cancel</button>
-                                <button onclick="window.saveSketch()" class="text-xs bg-brand-gold text-brand-900 hover:bg-brand-goldHover px-5 py-2 rounded-lg font-black transition-all shadow-sm">Save</button>
+        function buildSettingsHTML() {
+            return `
+                <div class="p-6 md:p-8 bg-white rounded-b-2xl rounded-tr-2xl shadow-lg border border-brand-100 space-y-6 animate-fadeIn">
+                    <div class="flex justify-between items-center border-b border-brand-200 pb-4">
+                        <h2 class="font-serif text-2xl italic font-bold text-brand-900">Pricing Profiles</h2>
+                        <button id="save-settings-btn" onclick="window.saveSystemSettings()" class="bg-brand-800 text-brand-gold font-bold py-2.5 px-6 rounded-xl shadow-md text-xs uppercase tracking-wider hover:bg-brand-900 transition-colors">Save Default Settings</button>
+                    </div>
+                    <div class="bg-yellow-50 border border-yellow-200 p-4 rounded-xl flex justify-between items-center shadow-sm">
+                        <div><h3 class="font-bold text-yellow-800 text-sm">Wholesale Admin View</h3><p class="text-[10px] text-yellow-700 mt-1">Toggle visibility of internal raw material costs across the application.</p></div>
+                        <button onclick="window.toggleAdminMode()" class="px-5 py-2 rounded-lg font-black text-xs uppercase shadow-sm border transition-colors ${state.isAdminMode ? 'bg-yellow-600 text-white border-yellow-700' : 'bg-white text-yellow-600 border-yellow-300 hover:bg-yellow-100'}">${state.isAdminMode ? 'Enabled' : 'Disabled'}</button>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="bg-brand-50 p-5 rounded-2xl border border-brand-200 space-y-4 shadow-sm">
+                            <h3 class="text-xs font-black text-brand-800 uppercase tracking-widest border-b border-brand-200 pb-2">Consumer Stone Markups (Retail / ct)</h3>
+                            <h4 class="text-[10px] font-bold text-brand-400 uppercase tracking-wider">Rings & Pendant Carat Prices</h4>
+                            <div class="grid grid-cols-2 gap-4">
+                                <div><label class="text-[9px] font-bold text-brand-500 block mb-1 uppercase">Rings Melee (/ct)</label><input type="number" class="border p-2.5 rounded-xl w-full font-bold shadow-sm bg-white" value="${state.settings.meleePricePerCt}" oninput="state.settings.meleePricePerCt=Number(this.value);" /></div>
+                                <div><label class="text-[9px] font-bold text-brand-500 block mb-1 uppercase">Rings Fancy (/ct)</label><input type="number" class="border p-2.5 rounded-xl w-full font-bold shadow-sm bg-white" value="${state.settings.fancyPricePerCt}" oninput="state.settings.fancyPricePerCt=Number(this.value);" /></div>
+                            </div>
+                            <h4 class="text-[10px] font-bold text-brand-400 uppercase tracking-wider pt-2 border-t border-brand-100">Tennis Bracelet Carat Prices</h4>
+                            <div class="grid grid-cols-2 gap-4">
+                                <div><label class="text-[9px] font-bold text-brand-500 block mb-1 uppercase">Tennis Melee (/ct)</label><input type="number" class="border p-2.5 rounded-xl w-full font-bold shadow-sm bg-white" value="${state.settings.tennisMeleePricePerCt}" oninput="state.settings.tennisMeleePricePerCt=Number(this.value);" /></div>
+                                <div><label class="text-[9px] font-bold text-brand-500 block mb-1 uppercase">Tennis Fancy (/ct)</label><input type="number" class="border p-2.5 rounded-xl w-full font-bold shadow-sm bg-white" value="${state.settings.tennisFancyPricePerCt}" oninput="state.settings.tennisFancyPricePerCt=Number(this.value);" /></div>
+                            </div>
+                            <h4 class="text-[10px] font-bold text-brand-400 uppercase tracking-wider pt-2 border-t border-brand-100">Center Stone Markups</h4>
+                            <div class="grid grid-cols-3 gap-3">
+                                <div><label class="text-[9px] text-brand-500 font-bold block mb-1">1-2ct Retail</label><input type="number" class="border p-2 rounded-lg w-full text-xs font-bold shadow-sm" value="${state.settings.centerStones.tier1.price}" oninput="state.settings.centerStones.tier1={price:Number(this.value)};" /></div>
+                                <div><label class="text-[9px] text-brand-500 font-bold block mb-1">2-3ct Retail</label><input type="number" class="border p-2 rounded-lg w-full text-xs font-bold shadow-sm" value="${state.settings.centerStones.tier2.price}" oninput="state.settings.centerStones.tier2={price:Number(this.value)};" /></div>
+                                <div><label class="text-[9px] text-brand-500 font-bold block mb-1">3-5ct Retail</label><input type="number" class="border p-2 rounded-lg w-full text-xs font-bold shadow-sm" value="${state.settings.centerStones.tier3.price}" oninput="state.settings.centerStones.tier3={price:Number(this.value)};" /></div>
                             </div>
                         </div>
-                        <div class="flex-1 relative overflow-hidden bg-white cursor-crosshair" id="sketch-container">
-                            <img id="sketch-bg" style="display: none; position: absolute; pointer-events: none;" />
-                            <div id="transform-box"><div id="handle-rotate" class="transform-handle">${ICONS.rotate}</div><div id="handle-scale" class="transform-handle">${ICONS.scale}</div></div>
-                            <canvas id="sketch-canvas" class="absolute inset-0 w-full h-full touch-none"></canvas>
-                        </div>
-                        <div class="absolute bottom-6 left-1/2 -translate-x-1/2 bg-white/95 backdrop-blur-xl px-4 py-3 rounded-2xl shadow-2xl border border-brand-200 flex flex-wrap justify-center gap-4 sm:gap-6 items-center z-20 w-[90%] sm:w-auto">
-                            <div class="flex gap-2 border-r pr-4 sm:pr-6 border-brand-200 text-brand-500">
-                                <button id="tool-pen" onclick="window.setSketchTool('pen')" class="p-2.5 bg-brand-gold/10 text-brand-gold rounded-xl shadow-inner border-2 border-brand-gold transition-all" title="Pen">${ICONS.pen}</button>
-                                <button id="tool-highlighter" onclick="window.setSketchTool('highlighter')" class="p-2.5 bg-transparent hover:bg-brand-50 rounded-xl border-2 border-transparent transition-all" title="Highlight">${ICONS.highlighter}</button>
-                                <button id="tool-eraser" onclick="window.setSketchTool('eraser')" class="p-2.5 bg-transparent hover:bg-brand-50 rounded-xl border-2 border-transparent transition-all" title="Eraser">${ICONS.eraser}</button>
-                                <button id="tool-transform" onclick="window.setSketchTool('transform')" class="p-2.5 bg-transparent hover:bg-brand-50 rounded-xl border-2 border-transparent transition-all" title="Move">${ICONS.transform}</button>
+
+                        <div class="space-y-4">
+                            <div class="bg-brand-50 p-5 rounded-2xl border border-brand-200 space-y-3 shadow-sm">
+                                <h3 class="text-xs font-black text-brand-800 uppercase tracking-widest border-b border-brand-200 pb-2">Rings & Pendant Metals (per gram)</h3>
+                                <div class="grid grid-cols-3 gap-3">
+                                    ${[10,14,18,19,22].map(k=>`<div><label class="text-[9px] font-bold text-brand-500 block mb-1">${k}k Gold</label><input type="number" class="border p-2 rounded-xl w-full text-xs font-bold shadow-sm" value="${state.settings.goldPricesPerGram[k]}" oninput="state.settings.goldPricesPerGram[${k}]=Number(this.value);" /></div>`).join('')}
+                                    <div><label class="text-[9px] font-bold text-brand-500 block mb-1">Platinum</label><input type="number" class="border p-2 rounded-xl w-full text-xs font-bold shadow-sm" value="${state.settings.platinumPricePerGram}" oninput="state.settings.platinumPricePerGram=Number(this.value);" /></div>
+                                    <div><label class="text-[9px] font-bold text-brand-500 block mb-1">Silver Base</label><input type="number" class="border p-2 rounded-xl w-full text-xs font-bold shadow-sm" value="${state.settings.silverPricePerGram}" oninput="state.settings.silverPricePerGram=Number(this.value);" /></div>
+                                </div>
                             </div>
-                            <div class="flex flex-col gap-1 border-r pr-4 sm:pr-6 border-brand-200 items-center justify-center min-w-[80px]">
-                                <label class="cursor-pointer text-[10px] font-bold text-brand-700 bg-brand-100 px-3 py-1.5 rounded-lg hover:bg-brand-200 transition-all text-center flex items-center gap-1.5 shadow-sm">${ICONS.camera} Photo<input type="file" accept="image/*" class="hidden" onchange="window.handleSketchBgUpload(event)" /></label>
-                            </div>
-                            <div class="flex gap-2 sm:gap-3 border-r pr-4 sm:pr-6 border-brand-200">
-                                <button id="color-slate" onclick="window.setSketchColor('#1e293b', 'slate')" class="w-6 h-6 sm:w-8 sm:h-8 rounded-full bg-brand-800 border-2 border-brand-400 shadow-md scale-110 transition-all"></button>
-                                <button id="color-gold" onclick="window.setSketchColor('#d4af37', 'gold')" class="w-6 h-6 sm:w-8 sm:h-8 rounded-full bg-brand-gold border-2 border-transparent shadow-sm scale-100 transition-all"></button>
-                                <button id="color-red" onclick="window.setSketchColor('#dc2626', 'red')" class="w-6 h-6 sm:w-8 sm:h-8 rounded-full bg-red-600 border-2 border-transparent shadow-sm scale-100 transition-all"></button>
-                                <button id="color-green" onclick="window.setSketchColor('#16a34a', 'green')" class="w-6 h-6 sm:w-8 sm:h-8 rounded-full bg-green-600 border-2 border-transparent shadow-sm scale-100 transition-all"></button>
-                            </div>
-                            <div class="flex gap-3 sm:gap-4 items-center pl-2">
-                                <button id="thick-1" onclick="window.setSketchThickness(1.5, 1)" class="w-3.5 h-3.5 bg-brand-300 rounded-full hover:bg-brand-500 transition-all"></button>
-                                <button id="thick-2" onclick="window.setSketchThickness(3.0, 2)" class="w-5 h-5 bg-brand-gold rounded-full shadow-md transition-all"></button>
-                                <button id="thick-3" onclick="window.setSketchThickness(6.0, 3)" class="w-7 h-7 bg-brand-300 rounded-full hover:bg-brand-500 transition-all"></button>
+
+                            <div class="bg-brand-50 p-5 rounded-2xl border border-brand-200 space-y-3 shadow-sm">
+                                <h3 class="text-xs font-black text-brand-800 uppercase tracking-widest border-b border-brand-200 pb-2">Tennis Bracelet Profiles</h3>
+                                <div class="mb-2">
+                                    <label class="text-[10px] font-bold text-brand-500 block mb-1 uppercase">Setting Labor (Retail / stone)</label>
+                                    <input type="number" class="border p-2.5 rounded-xl w-1/2 text-xs font-bold shadow-sm" placeholder="$0" value="${state.settings.tennisLaborRetail || ''}" oninput="state.settings.tennisLaborRetail=Number(this.value);" />
+                                </div>
+                                <h4 class="text-[10px] font-bold text-brand-500 uppercase tracking-widest mt-2 border-t border-brand-200 pt-3 mb-2">Tennis Metal Price (per Gram)</h4>
+                                <div class="grid grid-cols-3 gap-3">
+                                    ${[10,14,18,19,22].map(k=>`<div><label class="text-[9px] font-bold text-brand-500 block mb-1">${k}k Gold</label><input type="number" class="border p-2 rounded-xl w-full text-xs font-bold shadow-sm" value="${state.settings.tennisGoldPricesPerGram[k]}" oninput="state.settings.tennisGoldPricesPerGram[${k}]=Number(this.value);" /></div>`).join('')}
+                                    <div><label class="text-[9px] font-bold text-brand-500 block mb-1">Platinum</label><input type="number" class="border p-2 rounded-xl w-full text-xs font-bold shadow-sm" value="${state.settings.tennisPlatinumPricePerGram}" oninput="state.settings.tennisPlatinumPricePerGram=Number(this.value);" /></div>
+                                    <div><label class="text-[9px] font-bold text-brand-500 block mb-1">Silver Base</label><input type="number" class="border p-2 rounded-xl w-full text-xs font-bold shadow-sm" value="${state.settings.tennisSilverPricePerGram}" oninput="state.settings.tennisSilverPricePerGram=Number(this.value);" /></div>
+                                </div>
                             </div>
                         </div>
                     </div>
-                ` : ''}
+
+                    <div class="bg-brand-50 p-5 rounded-2xl border border-brand-200 space-y-4 shadow-sm w-full">
+                        <div class="flex justify-between items-center border-b border-brand-200 pb-2">
+                            <h3 class="text-xs font-black text-brand-800 uppercase tracking-widest">Internal Raw Cost Layouts</h3>
+                            <div class="flex items-center gap-2">
+                                <span class="text-[9px] font-bold text-brand-400 font-mono uppercase">Ounce Sync Target</span>
+                                <button onclick="window.fetchLivePrices()" class="bg-brand-800 text-brand-gold text-[10px] font-bold uppercase tracking-wider px-3 py-1.5 rounded-lg shadow-sm hover:brightness-110">Sync Feed</button>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div class="space-y-3">
+                                <h4 class="text-[10px] font-bold text-brand-400 uppercase tracking-wider">Global Stone Bases</h4>
+                                <div class="grid grid-cols-3 gap-2">
+                                    <div><label class="text-[9px] text-brand-500 font-bold block mb-1">Melee (/ct)</label><input type="number" class="border p-2 rounded-lg w-full text-xs font-bold shadow-sm" value="${state.settings.rawCostRates.melee}" oninput="state.settings.rawCostRates.melee=Number(this.value);" /></div>
+                                    <div><label class="text-[9px] text-brand-500 font-bold block mb-1">Fancy (/ct)</label><input type="number" class="border p-2 rounded-lg w-full text-xs font-bold shadow-sm" value="${state.settings.rawCostRates.fancy}" oninput="state.settings.rawCostRates.fancy=Number(this.value);" /></div>
+                                    <div><label class="text-[9px] text-brand-500 font-bold block mb-1">Center (/ct)</label><input type="number" class="border p-2 rounded-lg w-full text-xs font-bold shadow-sm" value="${state.settings.rawCostRates.center}" oninput="state.settings.rawCostRates.center=Number(this.value);" /></div>
+                                </div>
+                            </div>
+                            <div class="space-y-3">
+                                <h4 class="text-[10px] font-bold text-brand-400 uppercase tracking-wider">Active Raw Spot Costs (per Ounce)</h4>
+                                <div class="grid grid-cols-3 gap-2 font-mono text-xs font-bold text-brand-700 bg-white p-2 rounded-xl border border-brand-200 shadow-inner min-h-[44px] items-center">
+                                    <div class="text-center border-r border-brand-100"><span class="text-[8px] uppercase tracking-wider block text-brand-400 font-sans">Gold</span>$${state.spotPrices.gold.toFixed(0)}</div>
+                                    <div class="text-center border-r border-brand-100"><span class="text-[8px] uppercase tracking-wider block text-brand-400 font-sans">Silver</span>$${state.spotPrices.silver.toFixed(2)}</div>
+                                    <div class="text-center"><span class="text-[8px] uppercase tracking-wider block text-brand-400 font-sans">Plat</span>$${state.spotPrices.platinum.toFixed(0)}</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-red-50/50 p-5 rounded-2xl border border-red-100 space-y-4">
+                        <h3 class="text-xs font-bold text-red-800 uppercase tracking-widest border-b border-red-200 pb-2">Data Operations & Ledger Management</h3>
+                        <div class="flex flex-col md:flex-row gap-4 items-end">
+                            <div class="flex-1 w-full space-y-2">
+                                <button onclick="window.exportCSV('scrap')" class="w-full bg-white border border-red-200 text-red-700 font-bold py-2.5 rounded-xl hover:bg-red-50 transition-all text-[10px] uppercase tracking-wider shadow-sm">⬇️ Export Scrap (.csv)</button>
+                                <button onclick="window.exportCSV('quote')" class="w-full bg-white border border-red-200 text-red-700 font-bold py-2.5 rounded-xl hover:bg-red-50 transition-all text-[10px] uppercase tracking-wider shadow-sm">⬇️ Export Quotes (.csv)</button>
+                            </div>
+                            <div class="flex-1 w-full space-y-1">
+                                <label class="text-[10px] font-bold text-red-500 uppercase tracking-wider pl-1">Target Deletion Scope</label>
+                                <select id="clear-history-range" class="border border-red-200 p-2.5 rounded-xl w-full text-xs font-bold bg-white text-brand-800 shadow-sm">
+                                    <option value="365">Purge Records > 365 Days Old</option><option value="custom">Specific Range</option><option value="all">Wipe All Historical Databases</option>
+                                </select>
+                            </div>
+                            <div class="flex-1 w-full space-y-1">
+                                <label class="text-[10px] font-bold text-red-500 uppercase tracking-wider pl-1">Target Start</label>
+                                <input type="date" id="clear-start-date" class="border border-red-200 p-2.5 rounded-xl w-full text-xs font-bold bg-white text-brand-800 shadow-sm" />
+                            </div>
+                            <div class="flex-1 w-full space-y-1">
+                                <label class="text-[10px] font-bold text-red-500 uppercase tracking-wider pl-1">Target End</label>
+                                <input type="date" id="clear-end-date" class="border border-red-200 p-2.5 rounded-xl w-full text-xs font-bold bg-white text-brand-800 shadow-sm" />
+                            </div>
+                            <div class="flex-1 w-full">
+                                <button onclick="window.clearHistory()" class="w-full bg-red-600 text-white font-bold py-2.5 px-4 rounded-xl shadow-md text-xs uppercase tracking-wider hover:bg-red-700 transition-colors">🗑️ Execute Purge</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             `;
-            if(state.activeTab === 'quote' && state.quoteSession.activeSubTab === 'summary') setTimeout(window.initSignaturePad, 100);
-            if(state.activeTab === 'quote' || state.activeTab === 'settings' || state.activeTab === 'spot_price' || state.activeTab === 'scrap_calculator') setTimeout(window.updateQuoteTotals, 0);
+        }
+
+        function buildModals() {
+            if(!state.modal) return '';
+            const m = state.modal;
+            
+            let content = '';
+            if(m.type === 'addRing') {
+                content = `<div class="flex flex-col gap-3">
+                    <button onclick="state.quoteSession.rings.push(getEmptyRing('customRing')); state.quoteSession.activeSubTab=state.quoteSession.rings[state.quoteSession.rings.length-1].id; state.modal=null; window.render()" class="bg-brand-50 hover:bg-brand-100 font-bold py-3.5 rounded-xl border border-brand-200 transition-colors">Engagement / Custom</button>
+                    <button onclick="state.quoteSession.rings.push(getEmptyRing('weddingBand')); state.quoteSession.activeSubTab=state.quoteSession.rings[state.quoteSession.rings.length-1].id; state.modal=null; window.render()" class="bg-brand-50 hover:bg-brand-100 font-bold py-3.5 rounded-xl border border-brand-200 transition-colors">Wedding Band</button>
+                    <button onclick="state.quoteSession.rings.push(getEmptyRing('mensBand')); state.quoteSession.activeSubTab=state.quoteSession.rings[state.quoteSession.rings.length-1].id; state.modal=null; window.render()" class="bg-brand-50 hover:bg-brand-100 font-bold py-3.5 rounded-xl border border-brand-200 transition-colors">Men's Band</button>
+                    <button onclick="state.quoteSession.rings.push(getEmptyRing('pendant')); state.quoteSession.activeSubTab=state.quoteSession.rings[state.quoteSession.rings.length-1].id; state.modal=null; window.render()" class="bg-brand-50 hover:bg-brand-100 font-bold py-3.5 rounded-xl border border-brand-200 transition-colors">Pendant</button>
+                    <button onclick="state.quoteSession.rings.push(getEmptyRing('tennisBracelet')); state.quoteSession.activeSubTab=state.quoteSession.rings[state.quoteSession.rings.length-1].id; state.modal=null; window.render()" class="bg-brand-50 hover:bg-brand-100 font-bold py-3.5 rounded-xl border border-brand-200 transition-colors">Tennis Bracelet</button>
+                </div>
+                <button onclick="state.modal=null; window.render()" class="mt-5 text-xs font-bold text-brand-400 uppercase tracking-widest hover:text-brand-800">Close</button>`;
+            } 
+            else if(m.type === 'scrapLink') {
+                content = `<div class="max-h-60 overflow-y-auto mb-4 text-left space-y-2 mt-4 hide-scrollbar">
+                    ${state.scrapTransactions.map(t => `<div onclick="window.applyScrapCredit('${t.id}')" class="p-3 bg-brand-50 rounded-xl cursor-pointer hover:bg-brand-100 border border-brand-200 flex justify-between items-center transition-colors"><div class="font-bold text-sm text-brand-900">${t.name}<span class="block text-[10px] text-brand-500 font-normal mt-0.5">${t.date}</span></div><div class="font-black text-green-600">$${t.total}</div></div>`).join('')}
+                    ${state.scrapTransactions.length===0?'<p class="text-center text-xs text-brand-400 py-4">No scrap history found.</p>':''}
+                </div>
+                <button onclick="state.modal=null; window.render()" class="mt-2 text-xs font-bold text-brand-400 uppercase tracking-widest hover:text-brand-800">Close</button>`;
+            }
+            else if (m.type === 'imageView') {
+                content = `<img src="${m.src}" class="w-full h-auto rounded-xl object-contain max-h-[70vh]" />
+                <button onclick="state.modal=null; window.render()" class="mt-4 w-full bg-brand-50 font-bold py-3 rounded-xl border border-brand-200 hover:bg-brand-100">Close Viewer</button>`;
+            }
+            else if (m.type === 'scrapReceipt') {
+                const t = state.scrapTransactions.find(x => x.id === m.id);
+                if(!t) { setTimeout(()=>{state.modal=null; window.render();},10); return ''; }
+                content = `<div class="print-section text-left p-2 bg-white">
+                    <div class="text-center mb-6"><h1 class="font-serif text-4xl italic text-brand-900">Gold and Rose</h1><h2 class="text-xs font-bold text-brand-500 uppercase tracking-widest mt-2">Scrap Buyback Receipt</h2></div>
+                    <div class="space-y-4 text-sm text-brand-800 border-t border-brand-200 pt-5">
+                        <p><strong>Date:</strong> ${t.date}</p><p><strong>Client:</strong> ${t.name}</p><p><strong>Phone:</strong> ${t.phone || 'N/A'}</p>
+                        <div class="bg-brand-50 p-4 rounded-xl border border-brand-200 mt-4"><p class="text-xs font-bold uppercase mb-2 text-brand-500">Items Received:</p><p class="font-semibold">${t.summary}</p></div>
+                        <div class="mt-6 text-center"><p class="text-xs font-bold uppercase text-brand-500 mb-1">Total Cash Payout</p><p class="text-4xl font-black text-green-600">$${t.total}</p></div>
+                        ${t.image ? `<div class="mt-6"><p class="text-xs font-bold uppercase text-brand-500 mb-2">Reference ID:</p><img src="${t.image}" class="w-full max-w-[250px] rounded-xl border shadow-sm mx-auto" /></div>` : ''}
+                    </div>
+                </div>
+                <div class="mt-6 flex gap-3 print-hide"><button onclick="window.print()" class="flex-1 bg-brand-800 text-brand-gold py-3.5 rounded-xl font-bold uppercase text-xs shadow-md">Print Receipt</button><button onclick="state.modal=null; window.render()" class="flex-1 bg-brand-50 border border-brand-200 text-brand-700 py-3.5 rounded-xl font-bold uppercase text-xs">Close</button></div>`;
+            }
+            else if (m.type === 'quoteReceipt') {
+                const q = state.ringQuoteTransactions.find(x => x.id === m.id);
+                if(!q) { setTimeout(()=>{state.modal=null; window.render();},10); return ''; }
+                let d = q.fullData ? JSON.parse(JSON.stringify(q.fullData)) : getEmptyQuoteSession();
+                
+                content = `
+                ${window.generateInvoiceTemplate(d, true)}
+                <div class="mt-8 flex flex-col sm:flex-row gap-3 print-hide">
+                    <button onclick="window.loadQuoteIntoEditor('${m.id}')" class="flex-1 bg-brand-100 text-brand-800 py-3 rounded-xl font-bold text-xs uppercase tracking-wider hover:bg-brand-200">Load Editor</button>
+                    <button onclick="window.generatePDF('pdf-modal-content', '${d.cName || 'Ledger'}')" class="flex-1 bg-brand-800 text-brand-gold py-3 rounded-xl font-bold text-xs uppercase tracking-wider hover:bg-brand-900">Save PDF</button>
+                    <button onclick="state.modal=null; window.render()" class="flex-1 bg-white border border-brand-200 text-brand-600 py-3 rounded-xl font-bold text-xs uppercase tracking-wider hover:bg-brand-50">Close</button>
+                </div>`;
+            }
+            else {
+                content = `<p class="text-sm text-brand-500 mb-6">${m.message}</p>
+                <div class="flex gap-3"><button onclick="state.modal=null; window.render()" class="flex-1 bg-brand-50 font-bold py-3 rounded-xl border border-brand-200 hover:bg-brand-100 transition-colors">Cancel</button>
+                <button onclick="state.modal.onConfirm()" class="flex-1 bg-red-600 text-white font-bold py-3 rounded-xl shadow-md hover:bg-red-700 transition-colors">Confirm</button></div>`;
+            }
+
+            return `<div class="fixed inset-0 bg-brand-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-fadeIn">
+                <div class="bg-white rounded-3xl p-6 w-full max-w-2xl shadow-2xl border border-brand-100 text-center relative max-h-[95vh] overflow-y-auto hide-scrollbar">
+                    ${!['quoteReceipt', 'scrapReceipt', 'imageView'].includes(m.type) ? `<h3 class="font-serif text-2xl italic font-bold text-brand-900 mb-4">${m.title}</h3>` : ''}
+                    ${content}
+                </div>
+            </div>`;
         }
 
         // --- GLOBAL BINDINGS ---
@@ -954,7 +779,8 @@
         window.toggleAdminMode = toggleAdminMode;
         window.saveSignature = saveSignature;
         window.clearSignature = clearSignature;
-        window.buildInvoiceHTML = buildInvoiceHTML;
+        window.buildInvoiceHTML = generateInvoiceTemplate;
+        window.buildQuoteSummary = buildQuoteSummary;
         window.getTennisEstimates = getTennisEstimates;
         window.calculateRingCost = calculateRingCost;
         window.calculateRawCost = calculateRawCost;
